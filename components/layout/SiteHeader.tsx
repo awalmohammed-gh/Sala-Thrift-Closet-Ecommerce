@@ -29,10 +29,10 @@ export function SiteHeaderSkeleton() {
     <div className="sticky top-0 z-40 border-b border-line bg-white" aria-hidden="true">
       <div className="container-page flex flex-wrap items-center gap-5 py-3 md:flex-nowrap md:gap-8">
         <div className="skeleton size-16 shrink-0 sm:size-20" />
-        <div className="skeleton order-3 h-12 w-full rounded-full md:order-none md:flex-1" />
+        <div className="skeleton hidden h-12 rounded-full md:block md:flex-1" />
         <div className="skeleton ml-auto size-11 shrink-0" />
       </div>
-      <div className="border-t border-line"><div className="container-page flex gap-4 overflow-hidden py-3">{[0, 1, 2, 3, 4].map((i) => <div key={i} className="skeleton h-6 w-20 shrink-0" />)}</div></div>
+      <div className="hidden border-t border-line md:block"><div className="container-page flex gap-4 overflow-hidden py-3">{[0, 1, 2, 3, 4].map((i) => <div key={i} className="skeleton h-6 w-20 shrink-0" />)}</div></div>
     </div>
   );
 }
