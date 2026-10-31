@@ -6,6 +6,13 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "/manifest.json"
+    }
+  ],
+  "prefer_related_applications": false,
   "orientation": "any",
   "background_color": "#FAF8F3",
   "theme_color": "#2563EB",

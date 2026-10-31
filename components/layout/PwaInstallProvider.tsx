@@ -13,7 +13,8 @@ interface InstallEvent extends Event {
 interface InstallContextValue {
   standalone: boolean;
   platform: InstallPlatform;
-  installedApp: PwaApp | null;
+  /** True once this device has installed the app, even when the site is later opened in the browser. */
+  isInstalled: (app: PwaApp) => boolean;
   guideOpen: boolean;
   /** The browser's own install dialog is ready (Chrome, Edge, Samsung Internet). */
   canPrompt: (app: PwaApp) => boolean;
@@ -26,6 +27,47 @@ const InstallContext = createContext<InstallContextValue | null>(null);
 const emptySubscribe = () => () => {};
 const serverSnapshot = () => false;
 const serverPlatform = (): InstallPlatform => "desktop";
+
+/*
+ * Installed apps are remembered per device ("store", "admin"), so the download button stays
+ * hidden when the site is opened in the browser after installing. Chrome only offers its
+ * install prompt for apps that are not installed, so that prompt clears the memory again.
+ * Memory keeps the state for this visit when storage is blocked.
+ */
+const INSTALLED_KEY = "salasty:installed-apps";
+const installedListeners = new Set<() => void>();
+let installedInMemory: string | null = null;
+
+function readInstalled(): string {
+  if (installedInMemory !== null) return installedInMemory;
+  try { return localStorage.getItem(INSTALLED_KEY) ?? ""; } catch { return ""; }
+}
+
+function rememberInstalled(app: PwaApp, installed: boolean) {
+  const apps = new Set(readInstalled().split(",").filter(Boolean));
+  if (apps.has(app) === installed) return;
+  if (installed) apps.add(app);
+  else apps.delete(app);
+  installedInMemory = [...apps].sort().join(",");
+  try { localStorage.setItem(INSTALLED_KEY, installedInMemory); } catch { /* Remember for this visit only. */ }
+  installedListeners.forEach((notify) => notify());
+}
+
+function subscribeInstalled(notify: () => void) {
+  installedListeners.add(notify);
+  const onStorage = (event: StorageEvent) => {
+    if (event.key !== INSTALLED_KEY) return;
+    installedInMemory = null;
+    notify();
+  };
+  window.addEventListener("storage", onStorage);
+  return () => {
+    installedListeners.delete(notify);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
+const currentApp = (): PwaApp => isAdminPath(window.location.pathname) ? "admin" : "store";
 
 function subscribeDisplayMode(notify: () => void) {
   const media = window.matchMedia("(display-mode: standalone)");
@@ -91,18 +133,34 @@ function guideFor(platform: InstallPlatform, title: string): { steps: GuideStep[
 export function PwaInstallProvider({ children }: { children: ReactNode }) {
   const standalone = useSyncExternalStore(subscribeDisplayMode, isStandalone, serverSnapshot);
   const platform = useSyncExternalStore(emptySubscribe, installPlatform, serverPlatform);
+  const installedApps = useSyncExternalStore(subscribeInstalled, readInstalled, () => "");
+  const isInstalled = (app: PwaApp) => installedApps.split(",").includes(app);
   const [deferred, setDeferred] = useState<{ app: PwaApp; event: InstallEvent } | null>(null);
-  const [installedApp, setInstalledApp] = useState<PwaApp | null>(null);
   const [guideApp, setGuideApp] = useState<PwaApp | null>(null);
 
+  // Opened from the Home Screen, or Chrome reports the app as installed: remember it.
   useEffect(() => {
-    const currentApp = (): PwaApp => isAdminPath(window.location.pathname) ? "admin" : "store";
+    const app = currentApp();
+    if (standalone) {
+      rememberInstalled(app, true);
+      return;
+    }
+    const nav = navigator as Navigator & { getInstalledRelatedApps?: () => Promise<unknown[]> };
+    if (!nav.getInstalledRelatedApps) return;
+    let cancelled = false;
+    nav.getInstalledRelatedApps().then((apps) => { if (!cancelled && apps.length) rememberInstalled(app, true); }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [standalone]);
+
+  useEffect(() => {
     const beforeInstall = (event: Event) => {
       event.preventDefault();
-      setDeferred({ app: currentApp(), event: event as InstallEvent });
+      const app = currentApp();
+      rememberInstalled(app, false); // Chrome only offers to install apps that are not installed.
+      setDeferred({ app, event: event as InstallEvent });
     };
     const installed = () => {
-      setInstalledApp(currentApp());
+      rememberInstalled(currentApp(), true);
       setDeferred(null);
       setGuideApp(null);
     };
@@ -115,14 +173,14 @@ export function PwaInstallProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function install(app: PwaApp): Promise<boolean> {
-    if (standalone || installedApp === app) return false;
+    if (standalone || isInstalled(app)) return false;
     if (deferred?.app === app) {
       const event = deferred.event;
       setDeferred(null); // A native install event can be used only once.
       try {
         await event.prompt();
         const accepted = (await event.userChoice).outcome === "accepted";
-        if (accepted) setInstalledApp(app);
+        if (accepted) rememberInstalled(app, true);
         return accepted;
       } catch {
         setGuideApp(app);
@@ -134,12 +192,12 @@ export function PwaInstallProvider({ children }: { children: ReactNode }) {
   }
 
   const canPrompt = (app: PwaApp) => deferred?.app === app;
-  const canOffer = (app: PwaApp) => !standalone && installedApp !== app && (canPrompt(app) || platform !== "desktop");
+  const canOffer = (app: PwaApp) => !standalone && !isInstalled(app) && (canPrompt(app) || platform !== "desktop");
   const config = guideApp ? PWA_APPS[guideApp] : null;
   const guide = config ? guideFor(platform, config.title) : null;
 
   return (
-    <InstallContext.Provider value={{ standalone, platform, installedApp, guideOpen: guideApp !== null, canPrompt, canOffer, install }}>
+    <InstallContext.Provider value={{ standalone, platform, isInstalled, guideOpen: guideApp !== null, canPrompt, canOffer, install }}>
       {children}
       <Modal
         open={guideApp !== null}
