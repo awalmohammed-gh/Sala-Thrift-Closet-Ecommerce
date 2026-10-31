@@ -10,7 +10,10 @@ export async function generateMetadata(): Promise<Metadata> {
     robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
     manifest: "/admin-manifest.json",
     appleWebApp: { capable: true, title: "SALASTY Admin", statusBarStyle: "black-translucent" },
-    icons: { apple: [{ url: "/icons/admin-apple-icon-180.png", sizes: "180x180", type: "image/png" }] },
+    icons: {
+      icon: [{ url: "/icons/admin-192x192.png", sizes: "192x192", type: "image/png" }],
+      apple: [{ url: "/icons/admin-apple-icon-180.png", sizes: "180x180", type: "image/png" }],
+    },
     other: { "apple-mobile-web-app-capable": "yes" },
   };
 }

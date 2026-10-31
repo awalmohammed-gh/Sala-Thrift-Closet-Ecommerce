@@ -8,7 +8,7 @@
  * 100% fresh. Only immutable static assets (icons/images) are cached.
  */
 
-const STATIC_CACHE = "salasty-thrift-closet-static-v4";
+const STATIC_CACHE = "salasty-thrift-closet-static-v5";
 const FALLBACK_ICON = "/images/brand/salasty-logo.webp";
 
 self.addEventListener("install", () => {

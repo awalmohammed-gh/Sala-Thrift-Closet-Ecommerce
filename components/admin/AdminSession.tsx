@@ -97,7 +97,7 @@ export function AdminSessionProvider({ children }: { children: ReactNode }) {
     return (
       <div className="flex min-h-dvh min-w-0 items-center justify-center bg-cream px-4 py-8 text-brand">
         <div className="flex w-full max-w-sm flex-col items-center gap-4 text-center">
-          <BrandMark className="size-16" />
+          <BrandMark className="size-16" admin />
           {checkError ? (
             <>
               <h1 className="text-xl font-semibold text-ink">Unable to open admin</h1>
