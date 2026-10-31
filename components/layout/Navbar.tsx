@@ -29,14 +29,14 @@ const NAV_LINKS = [
   { label: "Contact", href: "/contact" },
 ];
 
-/** A native GET form keeps search usable before JavaScript loads. */
-export function SearchForm({ className }: { className?: string }) {
+/** A native GET form keeps search usable before JavaScript loads. On /shop it shows the current search. */
+export function SearchForm({ className, query = "" }: { className?: string; query?: string }) {
   const id = useId();
   return (
     <form role="search" action="/shop" method="get" className={cn("flex min-w-0 items-center gap-2 rounded-full border border-blue-100 bg-slate-50/70 p-1.5 transition-colors focus-within:border-blue-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-50", className)}>
       <label htmlFor={id} className="sr-only">Search clothing</label>
       <FiSearch className="ml-3 size-4 shrink-0 text-slate-400" aria-hidden="true" />
-      <input id={id} name="q" type="search" maxLength={100} placeholder="Find your next favourite..." className="h-8 min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-slate-400 sm:h-9 md:text-sm" />
+      <input key={query} id={id} name="q" type="search" maxLength={100} defaultValue={query} placeholder="Search jeans, tops, jackets..." className="h-8 min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-slate-400 sm:h-9 md:text-sm" />
       <button type="submit" aria-label="Search clothing" className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white transition-colors hover:bg-blue-700 sm:w-auto sm:gap-2 sm:px-5"><span className="hidden text-xs font-semibold sm:inline">Search</span><FiArrowRight className="size-4" aria-hidden="true" /></button>
     </form>
   );
@@ -56,7 +56,7 @@ export function Navbar({ storeName, logo, whatsappNumber, supportMessage, notifi
           <Logo storeName={storeName} logo={logo} />
           <span className="hidden border-l border-blue-100 pl-4 lg:block"><span className="block font-display text-lg font-bold tracking-[0.12em] text-slate-900">SALASTY</span><span className="mt-1 block text-[9px] font-medium uppercase tracking-[0.25em] text-slate-500">Thrift Closet</span></span>
         </Link>
-        <SearchForm className="col-span-2 row-start-2 md:col-span-1 md:col-start-2 md:row-start-1 md:mx-auto md:w-full md:max-w-xl" />
+        <SearchForm query={pathname === "/shop" ? searchParams.get("q") ?? "" : ""} className="col-span-2 row-start-2 md:col-span-1 md:col-start-2 md:row-start-1 md:mx-auto md:w-full md:max-w-xl" />
         <div className="col-start-2 row-start-1 ml-auto flex shrink-0 items-center gap-1 sm:gap-2 md:col-start-3">
           <InstallPwaButton variant="navbar" className="rounded-full!" />
           {notificationsEnabled && <NotificationBell storeName={storeName} />}

@@ -21,10 +21,12 @@ interface ProductFiltersProps {
   /** Name of the selected category on /shop, shown as a removable filter. Unset on category pages. */
   categoryLabel?: string;
   total: number | null;
+  /** Off on /shop, where the header search already drives the results. */
+  showSearch?: boolean;
 }
 
 /** Search, sort and availability controls. State lives in the URL so results are shareable. */
-export function ProductFilters({ basePath, values, categoryLabel, total }: ProductFiltersProps) {
+export function ProductFilters({ basePath, values, categoryLabel, total, showSearch = true }: ProductFiltersProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [search, setSearch] = useState(values.q);
@@ -71,14 +73,14 @@ export function ProductFilters({ basePath, values, categoryLabel, total }: Produ
     else navigate({ availability: "all" });
   }
 
-  const control = "h-11 rounded-xl border border-line bg-white text-sm text-ink transition-colors duration-200 hover:border-brand/40";
+  const control = "h-10 rounded-full border border-line bg-white text-sm text-ink transition-colors duration-200 hover:border-brand/40";
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-col gap-2 rounded-2xl border border-line bg-white p-2 shadow-card md:flex-row md:items-center">
-        <div className="relative min-w-0 flex-1">
+      {showSearch && (
+        <div className="relative">
           <label htmlFor="product-search" className="sr-only">
-            Filter products
+            Search in this category
           </label>
           <FiSearch className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden="true" />
           <input
@@ -87,24 +89,25 @@ export function ProductFilters({ basePath, values, categoryLabel, total }: Produ
             value={search}
             maxLength={100}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search products"
-            className="h-11 w-full rounded-xl bg-cream pl-11 pr-11 text-sm text-ink placeholder:text-muted focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand/20 [&::-webkit-search-cancel-button]:hidden"
+            placeholder="Search in this category"
+            className="h-11 w-full rounded-full border border-line bg-white pl-11 pr-11 text-base text-ink placeholder:text-muted focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/10 md:text-sm [&::-webkit-search-cancel-button]:hidden"
           />
-          <span className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center">
-            {pending ? (
-              <Spinner className="mr-1.5 text-brand" label="Updating results" />
-            ) : (
-              search && (
-                <button type="button" onClick={() => setQuery("")} className="rounded-full p-1.5 text-muted hover:bg-brand-50 hover:text-ink" aria-label="Clear search">
-                  <FiX className="size-4" />
-                </button>
-              )
-            )}
-          </span>
+          {search && !pending && (
+            <button type="button" onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-muted hover:bg-brand-50 hover:text-ink" aria-label="Clear search">
+              <FiX className="size-4" />
+            </button>
+          )}
         </div>
+      )}
 
-        <div className="flex min-w-0 gap-2">
-          <div className="relative min-w-0 flex-1 md:w-52 md:flex-none">
+      <div className="flex items-center justify-between gap-2 border-b border-line pb-3">
+        <p aria-live="polite" className="flex min-w-0 items-center gap-2 text-sm font-semibold text-ink">
+          <span className="truncate">{total === null ? "" : `${total} item${total === 1 ? "" : "s"}`}</span>
+          {pending && <Spinner className="text-brand" label="Updating results" />}
+        </p>
+
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="relative w-36 sm:w-48">
             <label htmlFor="filter-sort" className="sr-only">
               Sort by
             </label>
@@ -113,7 +116,7 @@ export function ProductFilters({ basePath, values, categoryLabel, total }: Produ
               id="filter-sort"
               value={values.sort}
               onChange={(e) => navigate({ sort: e.target.value as ProductSort })}
-              className={cn(control, "w-full cursor-pointer appearance-none truncate pl-10 pr-9 focus:outline-none focus:ring-2 focus:ring-brand/20")}
+              className={cn(control, "w-full cursor-pointer appearance-none truncate pl-9.5 pr-8 font-medium focus:outline-none focus:ring-2 focus:ring-brand/20")}
             >
               {PRODUCT_SORTS.map((sort) => (
                 <option key={sort} value={sort}>
@@ -121,10 +124,10 @@ export function ProductFilters({ basePath, values, categoryLabel, total }: Produ
                 </option>
               ))}
             </select>
-            <FiChevronDown className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden="true" />
+            <FiChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden="true" />
           </div>
 
-          <label className={cn(control, "flex shrink-0 cursor-pointer items-center gap-2.5 px-3.5 font-medium has-[:checked]:border-brand/40 has-[:checked]:bg-brand-50 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand/30")}>
+          <label className={cn(control, "flex shrink-0 cursor-pointer items-center gap-2 px-3 font-medium has-checked:border-brand has-checked:bg-brand-50 has-checked:text-brand has-focus-visible:ring-2 has-focus-visible:ring-brand/30")}>
             <input
               type="checkbox"
               role="switch"
@@ -136,15 +139,12 @@ export function ProductFilters({ basePath, values, categoryLabel, total }: Produ
               aria-hidden="true"
               className="relative h-5 w-9 shrink-0 rounded-full bg-line transition-colors duration-200 after:absolute after:left-0.5 after:top-0.5 after:size-4 after:rounded-full after:bg-white after:shadow-sm after:transition-transform after:duration-200 peer-checked:bg-brand peer-checked:after:translate-x-4"
             />
-            In stock
+            <span className="whitespace-nowrap">In stock</span>
           </label>
         </div>
       </div>
 
-      <div className="flex min-h-8 flex-wrap items-center gap-2 text-sm">
-        <p aria-live="polite" className="mr-1 font-medium text-ink">
-          {total === null ? "" : `${total} product${total === 1 ? "" : "s"}`}
-        </p>
+      {chips.length > 0 && <div className="flex flex-wrap items-center gap-2 text-sm">
         {chips.map((chip) => (
           <button
             key={chip.key}
@@ -170,7 +170,7 @@ export function ProductFilters({ basePath, values, categoryLabel, total }: Produ
             Clear all
           </button>
         )}
-      </div>
+      </div>}
     </div>
   );
 }

@@ -9,7 +9,7 @@ import { Pagination } from "./Pagination";
 import { ProductFilters, type FilterValues } from "./ProductFilters";
 import { ProductGrid } from "./ProductGrid";
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 24;
 type SearchParams = Record<string, string | string[] | undefined>;
 
 /** Turns untrusted URL parameters into safe filter values. */
@@ -72,14 +72,26 @@ export async function ProductListing({ searchParams, category }: ProductListingP
   const hasFilters = !!filters.q || filters.availability === "in-stock" || (!category && !!filters.category);
   const activeCategoryName = category ? undefined : categories?.find((c) => c.slug === filters.category)?.name;
 
+  // /shop names what is on screen; category pages have their own heading.
+  const heading = filters.q ? `Results for “${filters.q}”` : activeCategoryName ?? "All items";
+  const firstShown = result ? (result.page - 1) * PAGE_SIZE + 1 : 0;
+  const lastShown = result ? Math.min(result.page * PAGE_SIZE, result.total) : 0;
+
   return (
-    <div className="space-y-5 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-5">
+      {!category && (
+        <div className="flex items-baseline justify-between gap-3">
+          <h1 className="min-w-0 truncate font-display text-2xl font-bold tracking-[-0.03em] text-ink sm:text-3xl">{heading}</h1>
+          <p className="hidden shrink-0 text-sm text-muted sm:block">Order on WhatsApp · No account needed</p>
+        </div>
+      )}
       {!category && categories && <CategoryChips categories={categories} active={filters.category} hrefFor={categoryHref} />}
       <ProductFilters
         basePath={basePath}
         values={{ ...filters, category: category ? category.slug : filters.category }}
         categoryLabel={activeCategoryName ?? (filters.category || undefined)}
         total={result?.total ?? null}
+        showSearch={!!category}
       />
 
       {result === null ? (
@@ -106,6 +118,11 @@ export async function ProductListing({ searchParams, category }: ProductListingP
               />
             }
           />
+          {result.total > 0 && (
+            <p className="pt-4 text-center text-xs text-muted">
+              Showing {firstShown}–{lastShown} of {result.total} item{result.total === 1 ? "" : "s"}
+            </p>
+          )}
           <Pagination page={result.page} totalPages={result.totalPages} hrefFor={hrefFor} />
         </>
       )}
