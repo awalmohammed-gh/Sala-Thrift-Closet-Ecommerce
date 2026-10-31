@@ -2,110 +2,188 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { FiArrowRight, FiArrowUpRight, FiBox, FiCheckCircle, FiClock, FiGrid, FiImage, FiPackage, FiPlus, FiRefreshCw, FiShoppingCart, FiTruck, FiXCircle } from "react-icons/fi";
-import type { DashboardSummary } from "@salasty-thrift-closet/shared";
-import { ErrorBlock, LoadingBlock, PageHeader, Panel, StockBadge } from "@/components/admin/AdminUI";
+import type { ReactNode } from "react";
+import { FiAlertTriangle, FiArrowRight, FiCheckCircle, FiChevronRight, FiClock, FiInbox, FiPlus, FiRefreshCw } from "react-icons/fi";
+import { formatGHS, type DashboardSummary } from "@salasty-thrift-closet/shared";
+import { ErrorBlock, LoadingBlock, OrderStatusBadge, PageHeader, Panel, StockBadge } from "@/components/admin/AdminUI";
 import { DashboardStats } from "@/components/admin/DashboardStats";
 import { useAdminSession } from "@/components/admin/AdminSession";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { useAdminResource } from "@/hooks/useAdminResource";
+import { formatRelativeTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
-const QUICK_ACTIONS = [
-  { title: "Manage products", description: "Edit details, prices and store visibility.", href: "/admin/products", icon: FiBox },
-  { title: "Organise categories", description: "Make it easy for customers to find products.", href: "/admin/categories", icon: FiGrid },
-  { title: "Update store banners", description: "Highlight products and offers on your homepage.", href: "/admin/banners", icon: FiImage },
-];
+function greeting(hour: number) {
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+const panelLink = "inline-flex min-h-9 items-center gap-1.5 text-sm font-semibold text-brand hover:underline";
 
 export function OverviewView() {
   const { admin } = useAdminSession();
   const { data, error, loading, reload } = useAdminResource<DashboardSummary>("/admin/dashboard");
-  const orderStatuses = data ? [
-    { label: "Awaiting confirmation", value: data.orders.pending, href: "/admin/orders?status=WhatsApp%20Pending", icon: FiClock, tone: "text-accent-700 bg-accent-50" },
-    { label: "Confirmed", value: data.orders.confirmed, href: "/admin/orders?status=Confirmed", icon: FiPackage, tone: "text-brand bg-brand-50" },
-    { label: "In progress", value: data.orders.inProgress, href: "/admin/orders", icon: FiTruck, tone: "text-brand bg-brand-50" },
-    { label: "Completed", value: data.orders.completed, href: "/admin/orders?status=Completed", icon: FiCheckCircle, tone: "text-success bg-success-50" },
-    { label: "Cancelled", value: data.orders.cancelled, href: "/admin/orders?status=Cancelled", icon: FiXCircle, tone: "text-muted bg-cream" },
-  ] : [];
+  const now = new Date();
+  const today = now.toLocaleDateString("en-GH", { weekday: "long", day: "numeric", month: "long" });
 
   return (
     <>
       <PageHeader
-        title="Your store at a glance"
-        description={`Welcome back, ${admin.name.split(" ")[0]}. Here is how your store is doing.`}
+        title={`${greeting(now.getHours())}, ${admin.name.split(" ")[0]}`}
+        description={`${today}. Here is what needs you today.`}
         actions={<>
-          <Button variant="secondary" onClick={reload} disabled={loading} aria-label={loading ? "Refreshing overview" : "Refresh overview"} leftIcon={<FiRefreshCw className={cn("size-4", loading && "motion-safe:animate-spin")} aria-hidden="true" />}>Refresh</Button>
-          <ButtonLink href="/" external variant="secondary" rightIcon={<FiArrowUpRight className="size-4" aria-hidden="true" />}>View store<span className="sr-only"> (opens in a new tab)</span></ButtonLink>
+          <Button variant="secondary" onClick={reload} disabled={loading} aria-label={loading ? "Refreshing dashboard" : "Refresh dashboard"} leftIcon={<FiRefreshCw className={cn("size-4", loading && "motion-safe:animate-spin")} aria-hidden="true" />}>Refresh</Button>
+          <ButtonLink href="/admin/products/new" leftIcon={<FiPlus className="size-4" aria-hidden="true" />}>Add product</ButtonLink>
         </>}
       />
 
-      {loading && !data ? <LoadingBlock label="Loading overview" /> : error && !data ? <ErrorBlock message={error} onRetry={reload} /> : data ? (
+      {loading && !data ? <LoadingBlock label="Loading dashboard" /> : error && !data ? <ErrorBlock message={error} onRetry={reload} /> : data ? (
         <div className="space-y-6" aria-busy={loading}>
-          {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger/20 bg-danger-50 px-4 py-3 text-sm text-danger"><p>Could not refresh the overview. Showing the last available figures.</p><Button size="sm" variant="secondary" onClick={reload}>Try again</Button></div>}
+          {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger/20 bg-danger-50 px-4 py-3 text-sm text-danger"><p>Could not refresh the dashboard. Showing the last available figures.</p><Button size="sm" variant="secondary" onClick={reload}>Try again</Button></div>}
+          <AttentionList summary={data} />
           <DashboardStats summary={data} />
 
-          <Panel title="Order overview" actions={<Link href="/admin/orders" className="inline-flex min-h-9 items-center gap-2 text-sm font-semibold text-brand hover:underline">Manage orders <FiArrowRight aria-hidden="true" /></Link>}>
-            <div className="px-4 pt-4 sm:px-5"><p className="text-xs text-muted">Confirm WhatsApp requests after receiving the customer&apos;s message. View all order details on the Orders page.</p></div>
-            <ul className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 sm:p-4 xl:grid-cols-5">
-              {orderStatuses.map(({ label, value, href, icon: Icon, tone }) => (
-                <li key={label}><Link href={href} className="group flex h-full flex-col gap-3 rounded-xl border border-transparent p-3 transition-colors hover:border-line hover:bg-cream/70">
-                  <span className={cn("flex size-9 items-center justify-center rounded-xl", tone)}><Icon className="size-4" aria-hidden="true" /></span>
-                  <span><span className="block font-display text-2xl font-semibold tabular-nums text-ink">{value}</span><span className="mt-1 block text-xs text-muted">{label}</span></span>
-                </Link></li>
-              ))}
-            </ul>
-          </Panel>
-
-          <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-            <Panel title="Stock that needs attention" actions={<Link href="/admin/inventory" className="inline-flex min-h-9 items-center gap-2 text-sm font-semibold text-brand hover:underline">Inventory <FiArrowRight aria-hidden="true" /></Link>}>
-              {data.lowStockItems.length === 0 ? (
-                <div className="flex flex-col items-center px-5 py-12 text-center">
-                  <span className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-success-50 text-success"><FiCheckCircle className="size-6" aria-hidden="true" /></span>
-                  <h3 className="text-base font-semibold text-ink">{data.products.active ? "Your stock is looking good" : "Ready for your products"}</h3>
-                  <p className="mt-2 max-w-xs text-sm text-muted">{data.products.active ? "No active products need restocking right now." : "Add a product and its stock to get started. Low-stock alerts will appear here."}</p>
-                  <ButtonLink href={data.products.active ? "/admin/inventory" : "/admin/products/new"} variant="secondary" size="sm" className="mt-5">{data.products.active ? "View inventory" : "Add your first product"}</ButtonLink>
-                </div>
-              ) : (
-                <>
-                  <p className="px-4 pt-4 text-xs text-muted sm:px-5">Low and out-of-stock items, starting with the lowest quantities.</p>
-                  <ul className="mt-3 divide-y divide-line">
-                    {data.lowStockItems.map((row) => (
-                      <li key={`${row.productId}-${row.variantId ?? "base"}`}>
-                        <Link href="/admin/inventory" className="group flex min-w-0 items-center gap-3 px-4 py-3.5 transition-colors hover:bg-cream/60 sm:px-5">
-                          <div className="relative size-12 shrink-0 overflow-hidden rounded-xl border border-line bg-cream"><Image src={row.image || "/images/placeholders/product.svg"} alt="" fill sizes="48px" className="object-cover" /></div>
-                          <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-ink">{row.productName}</p>{row.variantLabel && <p className="mt-1 truncate text-xs text-muted">{row.variantLabel}</p>}</div>
-                          <div className="flex shrink-0 flex-col items-end gap-1.5"><span className="text-sm font-semibold tabular-nums text-ink">{row.stock} left</span><StockBadge state={row.state} /></div>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </Panel>
-
+          <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+            <LatestOrders summary={data} />
             <div className="min-w-0 space-y-6">
-              <section className="relative overflow-hidden rounded-2xl border border-brand bg-brand-deep p-5 text-white sm:p-6">
-                <FiShoppingCart aria-hidden="true" className="pointer-events-none absolute -right-4 -top-3 size-28 -rotate-12 text-white/5" />
-                <span className="inline-flex rounded-lg bg-white/10 p-2.5"><FiPlus className="size-5 text-accent" aria-hidden="true" /></span>
-                <h2 className="relative mt-4 text-xl font-semibold">Something new to sell?</h2>
-                <p className="relative mt-2 max-w-sm text-sm leading-relaxed text-white/70">Add photos, a price and any sizes or colours. Your customers can take it from there on WhatsApp.</p>
-                <ButtonLink href="/admin/products/new" variant="accent" className="relative mt-5" leftIcon={<FiPlus className="size-4" aria-hidden="true" />}>Add product</ButtonLink>
-              </section>
-              <Panel title="Quick actions">
-                <ul className="divide-y divide-line">
-                  {QUICK_ACTIONS.map(({ title, description, href, icon: Icon }) => (
-                    <li key={href}><Link href={href} className="group flex items-center gap-3 px-4 py-4 transition-colors hover:bg-cream/60 sm:px-5">
-                      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand"><Icon className="size-[18px]" aria-hidden="true" /></span>
-                      <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-ink">{title}</span><span className="mt-1 block text-xs leading-relaxed text-muted">{description}</span></span>
-                      <FiArrowUpRight className="size-4 shrink-0 text-muted transition-colors group-hover:text-brand" aria-hidden="true" />
-                    </Link></li>
-                  ))}
-                </ul>
-              </Panel>
+              <OrdersByStatus summary={data} />
+              <RestockList summary={data} />
             </div>
           </div>
         </div>
       ) : null}
     </>
+  );
+}
+
+/** The day's to-do list: the first thing the admin sees, in plain words. */
+function AttentionList({ summary }: { summary: DashboardSummary }) {
+  const { orders, products } = summary;
+  const stockAlerts = products.lowStock + products.outOfStock;
+  const tasks: { icon: ReactNode; tone: string; text: ReactNode; href: string; action: string }[] = [];
+  if (!products.total) {
+    tasks.push({ icon: <FiPlus className="size-4" />, tone: "bg-brand text-white", text: <>Add your first product so customers have something to order.</>, href: "/admin/products/new", action: "Add product" });
+  }
+  if (orders.pending) {
+    tasks.push({ icon: <FiClock className="size-4" />, tone: "bg-sky-500 text-white", text: <><strong>{orders.pending} new order{orders.pending === 1 ? "" : "s"}</strong> waiting for you to confirm on WhatsApp.</>, href: "/admin/orders?status=WhatsApp%20Pending", action: "Review" });
+  }
+  if (stockAlerts) {
+    tasks.push({ icon: <FiAlertTriangle className="size-4" />, tone: "bg-red-500 text-white", text: <><strong>{stockAlerts} item{stockAlerts === 1 ? "" : "s"}</strong> {products.outOfStock && products.lowStock ? "sold out or running low" : products.outOfStock ? "sold out" : "running low"}.</>, href: "/admin/inventory", action: "Restock" });
+  }
+
+  if (!tasks.length) {
+    return (
+      <div className="flex items-center gap-3 rounded-2xl border border-success/20 bg-success-50 px-4 py-3.5 sm:px-5">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-success text-white"><FiCheckCircle className="size-[18px]" aria-hidden="true" /></span>
+        <p className="text-sm text-ink"><strong>All caught up.</strong> No new orders or stock problems right now.</p>
+      </div>
+    );
+  }
+
+  return (
+    <section aria-labelledby="attention-heading" className="overflow-hidden rounded-2xl border border-line bg-white shadow-card">
+      <h2 id="attention-heading" className="border-b border-line px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-muted sm:px-5">Needs your attention</h2>
+      <ul className="divide-y divide-line">
+        {tasks.map((task) => (
+          <li key={task.href}>
+            <Link href={task.href} className="group flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-brand-50/60 sm:px-5">
+              <span aria-hidden="true" className={cn("flex size-9 shrink-0 items-center justify-center rounded-full", task.tone)}>{task.icon}</span>
+              <p className="min-w-0 flex-1 text-sm text-ink">{task.text}</p>
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand px-3 py-1.5 text-xs font-semibold text-white transition-colors group-hover:bg-brand-700">{task.action}<FiChevronRight className="size-3.5" aria-hidden="true" /></span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function LatestOrders({ summary }: { summary: DashboardSummary }) {
+  const orders = summary.recentOrders;
+  return (
+    <Panel title="Latest orders" actions={<Link href="/admin/orders" className={panelLink}>All orders <FiArrowRight aria-hidden="true" /></Link>}>
+      {orders.length === 0 ? (
+        <div className="flex flex-col items-center px-5 py-12 text-center">
+          <span className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-brand-50 text-brand"><FiInbox className="size-6" aria-hidden="true" /></span>
+          <h3 className="text-base font-semibold text-ink">No orders yet</h3>
+          <p className="mt-2 max-w-xs text-sm text-muted">When a customer sends an order on WhatsApp, it shows up here straight away.</p>
+        </div>
+      ) : (
+        <ul className="divide-y divide-line">
+          {orders.map((order) => (
+            <li key={order.id}>
+              <Link href={`/admin/orders?open=${order.id}`} className={cn("group flex min-w-0 items-center gap-3 px-4 py-3.5 transition-colors hover:bg-cream-200/60 sm:px-5", order.status === "WhatsApp Pending" && "bg-sky-50/60")}>
+                <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-bold text-brand">{order.customer.name.trim().charAt(0).toUpperCase() || "?"}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-ink">{order.customer.name || "Customer"}</p>
+                  <p className="mt-0.5 truncate text-xs text-muted">
+                    {order.orderReference} · {order.itemCount} item{order.itemCount === 1 ? "" : "s"} · <time dateTime={order.createdAt}>{formatRelativeTime(order.createdAt)}</time>
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                  <span className="text-sm font-bold tabular-nums text-ink">{formatGHS(order.total)}</span>
+                  <OrderStatusBadge status={order.status} />
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
+  );
+}
+
+function OrdersByStatus({ summary }: { summary: DashboardSummary }) {
+  const { orders } = summary;
+  const rows = [
+    { label: "Waiting to confirm", value: orders.pending, href: "/admin/orders?status=WhatsApp%20Pending", bar: "bg-sky-500" },
+    { label: "Confirmed", value: orders.confirmed, href: "/admin/orders?status=Confirmed", bar: "bg-brand" },
+    { label: "Being prepared or on the way", value: orders.inProgress, href: "/admin/orders", bar: "bg-indigo-500" },
+    { label: "Completed", value: orders.completed, href: "/admin/orders?status=Completed", bar: "bg-success" },
+    { label: "Cancelled", value: orders.cancelled, href: "/admin/orders?status=Cancelled", bar: "bg-slate-300" },
+  ];
+  const max = Math.max(1, ...rows.map((row) => row.value));
+  return (
+    <Panel title="Orders by status" actions={<span className="text-xs text-muted">{orders.total} in total</span>}>
+      <ul className="space-y-1 p-2 sm:p-3">
+        {rows.map((row) => (
+          <li key={row.label}>
+            <Link href={row.href} className="block rounded-xl px-2 py-2 transition-colors hover:bg-cream-200/60 sm:px-3">
+              <span className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="truncate text-ink">{row.label}</span>
+                <span className="font-semibold tabular-nums text-ink">{row.value}</span>
+              </span>
+              <span aria-hidden="true" className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-cream-200">
+                <span className={cn("block h-full rounded-full transition-[width] duration-500", row.bar)} style={{ width: `${(row.value / max) * 100}%` }} />
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </Panel>
+  );
+}
+
+function RestockList({ summary }: { summary: DashboardSummary }) {
+  const items = summary.lowStockItems.slice(0, 5);
+  return (
+    <Panel title="Restock soon" actions={<Link href="/admin/inventory" className={panelLink}>Stock <FiArrowRight aria-hidden="true" /></Link>}>
+      {items.length === 0 ? (
+        <p className="flex items-center gap-2 px-4 py-5 text-sm text-muted sm:px-5"><FiCheckCircle className="size-4 shrink-0 text-success" aria-hidden="true" />{summary.products.active ? "Nothing needs restocking." : "Stock alerts appear here once you add products."}</p>
+      ) : (
+        <ul className="divide-y divide-line">
+          {items.map((row) => (
+            <li key={`${row.productId}-${row.variantId ?? "base"}`}>
+              <Link href="/admin/inventory" className="flex min-w-0 items-center gap-3 px-4 py-3 transition-colors hover:bg-cream-200/60 sm:px-5">
+                <div className="relative size-11 shrink-0 overflow-hidden rounded-xl border border-line bg-cream"><Image src={row.image || "/images/placeholders/product.svg"} alt="" fill sizes="44px" className="object-cover" /></div>
+                <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-ink">{row.productName}</p>{row.variantLabel && <p className="mt-0.5 truncate text-xs text-muted">{row.variantLabel}</p>}</div>
+                <div className="flex shrink-0 flex-col items-end gap-1"><span className="text-xs font-semibold tabular-nums text-ink">{row.stock} left</span><StockBadge state={row.state} /></div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
   );
 }
