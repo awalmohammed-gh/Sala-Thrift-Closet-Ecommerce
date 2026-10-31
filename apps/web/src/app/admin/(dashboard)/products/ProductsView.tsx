@@ -64,7 +64,7 @@ function ProductsContent() {
     const names = (products.data?.items ?? []).filter((product) => selectedIds.has(product.id)).map((product) => product.name);
     if (!(await confirm({
       title: `Permanently delete ${ids.length} selected product${ids.length === 1 ? "" : "s"}?`,
-      description: <div className="space-y-3"><p>This permanently removes these products from the database and storefront. It cannot be undone. Existing order details are kept.</p><ul className="max-h-40 list-disc space-y-1 overflow-y-auto pl-5">{names.map((name, index) => <li key={ids[index]}>{name}</li>)}</ul></div>,
+      description: <div className="space-y-3"><p>This removes these products and their photos from the store, the database and Cloudinary. It cannot be undone. Past orders keep the item names and prices.</p><ul className="max-h-40 list-disc space-y-1 overflow-y-auto pl-5">{names.map((name, index) => <li key={ids[index]}>{name}</li>)}</ul></div>,
       confirmLabel: `Delete ${ids.length} product${ids.length === 1 ? "" : "s"}`,
       cancelLabel: "Keep products",
       tone: "danger",
@@ -131,7 +131,7 @@ function ProductsContent() {
     if (busyId) return;
     if (!(await confirm({
       title: `Permanently delete "${product.name}"?`,
-      description: "This removes the product from the database and storefront. It cannot be restored. Existing orders keep their recorded item details.",
+      description: "This removes the product and its photos from the store, the database and Cloudinary. It cannot be undone. Past orders keep the item name and price.",
       confirmLabel: "Delete permanently",
       cancelLabel: "Keep product",
       tone: "danger",

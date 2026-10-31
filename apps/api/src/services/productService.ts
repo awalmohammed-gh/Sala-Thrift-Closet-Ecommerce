@@ -6,6 +6,7 @@ import {
   slugify,
   variantLabel,
   type AdminProductDTO,
+  type ImageAsset,
   type InventoryRow,
   type Paginated,
   type ProductDTO,
@@ -14,10 +15,11 @@ import {
 import { Category, type CategoryDoc } from "../models/Category.js";
 import { Product, type ProductDoc, type ProductVariantDoc } from "../models/Product.js";
 import { nextSequence } from "../models/Counter.js";
+import { Order } from "../models/Order.js";
 import { ApiError } from "../utils/ApiError.js";
 import { toAdminProductDTO, toProductDTO, type ProductLean } from "../utils/serialize.js";
 import type { AdminProductQuery, InventoryQuery, PublicProductQuery } from "../validators/productSchema.js";
-import { assertOwnedImages, cleanupRemovedImages } from "./imageService.js";
+import { assertOwnedImages, cleanupRemovedImages, deleteImages } from "./imageService.js";
 import { revalidateStorefront } from "./revalidationService.js";
 
 const CATEGORY_FIELDS = "name slug";
@@ -270,21 +272,44 @@ export async function permanentlyDeleteProduct(id: string): Promise<{ id: string
   return { id, deleted: true };
 }
 
-/** One bounded database write; any missing item or later failure rolls the whole batch back. */
+/**
+ * One bounded database write; any missing item or later failure rolls the whole batch back.
+ * The products' photos are then removed from Cloudinary, so past orders drop their photo
+ * link in the same transaction and keep their name, price and options.
+ */
 export async function permanentlyDeleteProducts(ids: string[]): Promise<{ ids: string[]; deletedCount: number }> {
   const selection = bulkProductDeleteSchema.parse({ ids }).ids;
+  let images: ImageAsset[] = [];
   await mongoose.connection.transaction(async (session) => {
+    const docs = await Product.find({ _id: { $in: selection } }, { images: 1 }, { session, maxTimeMS: 5000 }).lean();
+    images = docs.flatMap((doc) => doc.images);
     const result = await Product.deleteMany({ _id: { $in: selection } }, { session, maxTimeMS: 5000 });
     if (result.deletedCount !== selection.length) {
       if (selection.length === 1) throw ApiError.notFound("Product not found.");
       throw ApiError.conflict("Some selected products no longer exist. Refresh the list and select them again. No products were deleted.", "PRODUCT_SELECTION_CHANGED");
     }
+    const urls = images.map((image) => image.url);
+    if (urls.length) {
+      await Order.updateMany(
+        { "items.image": { $in: urls } },
+        { $set: { "items.$[item].image": null } },
+        { arrayFilters: [{ "item.image": { $in: urls } }], session, maxTimeMS: 5000 },
+      );
+    }
     // A deletion must refresh storefronts even when another product has a newer updatedAt.
     await nextSequence("catalog-deletions", session);
   }, { maxCommitTimeMS: 5000 });
-  // Keep uploaded images available for existing order snapshots.
   await revalidateStorefront("products", "categories");
+  await deleteUnusedProductImages(images);
   return { ids: selection, deletedCount: selection.length };
+}
+
+/** Removes photos from Cloudinary unless another product still shows them. Never throws. */
+async function deleteUnusedProductImages(images: ImageAsset[]): Promise<void> {
+  const publicIds = [...new Set(images.map((image) => image.publicId))];
+  if (!publicIds.length) return;
+  const stillUsed = new Set(await Product.distinct("images.publicId", { "images.publicId": { $in: publicIds } }).catch(() => publicIds));
+  await deleteImages(publicIds.filter((publicId) => !stillUsed.has(publicId)));
 }
 
 /* --------------------------------------------------------------- Inventory */
