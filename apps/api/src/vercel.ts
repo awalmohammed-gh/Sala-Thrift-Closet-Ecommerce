@@ -18,8 +18,9 @@ function applyVercelDefaults(): void {
     STOREFRONT_URL: site,
     // Public: vercel.json routes /api/revalidate to the web service. (Vercel rejects a binding
     // back to `web` because `web` already binds to `api`.) Protected previews answer 401, and
-    // their pages refresh on the normal cache schedule instead.
-    WEB_REVALIDATE_URL: site && `${site}/api/revalidate`,
+    // their pages refresh on the normal cache schedule instead. Only with a secret: the URL
+    // without REVALIDATE_SECRET fails env validation and would take the whole API down.
+    WEB_REVALIDATE_URL: site && process.env.REVALIDATE_SECRET?.trim() ? `${site}/api/revalidate` : undefined,
     // One proxy (Vercel) sits in front of the function; requests are first-party HTTPS.
     TRUST_PROXY: "1",
     COOKIE_SECURE: "true",
