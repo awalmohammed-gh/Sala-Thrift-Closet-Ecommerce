@@ -43,7 +43,15 @@ export async function fetchCatalogApi<T>(path: string): Promise<FetchResult<T>> 
 }
 
 /** Failed prerenders remain stable for the build but revalidate after one second. */
+/**
+ * Successful catalogue reads refresh in the background at most once a minute, like the
+ * built-in "minutes" profile, but stay servable for 30 days instead of 1 hour. A quiet shop
+ * would otherwise make the first visitor after an idle hour wait for a cold API and database.
+ * Admin changes still show at once: the API revalidates the matching cache tags.
+ */
+export const CATALOG_CACHE_LIFE = { stale: 300, revalidate: 60, expire: 60 * 60 * 24 * 30 } as const;
+
 export function catalogCacheLife(result: FetchResult<unknown>, building: boolean) {
-  if (result.ok || result.status === 404) return "minutes" as const;
+  if (result.ok || result.status === 404) return CATALOG_CACHE_LIFE;
   return building ? { stale: 30, revalidate: 1, expire: 300 } : "seconds" as const;
 }

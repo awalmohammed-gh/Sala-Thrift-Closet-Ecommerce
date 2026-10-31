@@ -14,7 +14,7 @@ import type {
 } from "@salasty-thrift-closet/shared";
 import { fallbackSettings } from "@/config/site";
 import { buildQuery } from "@/lib/utils";
-import { catalogCacheLife, fetchCatalogApi as fetchApi, type FetchResult } from "@/lib/catalogTransport";
+import { CATALOG_CACHE_LIFE, catalogCacheLife, fetchCatalogApi as fetchApi, type FetchResult } from "@/lib/catalogTransport";
 
 const building = process.env.NEXT_PHASE === "phase-production-build";
 
@@ -24,8 +24,7 @@ const building = process.env.NEXT_PHASE === "phase-production-build";
  */
 function lifetimeFor(result: FetchResult<unknown>): void {
   const lifetime = catalogCacheLife(result, building);
-  if (lifetime === "minutes") cacheLife("minutes");
-  else if (lifetime === "seconds") cacheLife("seconds");
+  if (lifetime === "seconds") cacheLife("seconds");
   else cacheLife(lifetime);
 }
 
@@ -39,7 +38,7 @@ export async function getMetadataSettings(): Promise<StoreSettingsDTO> {
   cacheTag("settings");
   const result = await fetchApi<StoreSettingsDTO>("/settings/public");
   // Metadata must stay prerenderable even when the API is unavailable.
-  if (result.ok) cacheLife("minutes");
+  if (result.ok) cacheLife(CATALOG_CACHE_LIFE);
   else cacheLife({ stale: 30, revalidate: 1, expire: 300 });
   return result.ok ? result.data : fallbackSettings;
 }

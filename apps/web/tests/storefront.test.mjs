@@ -84,5 +84,5 @@ test("preview builds skip unreachable APIs and their empty result revalidates im
   assert.equal(fetch.mock.callCount(), 0);
   assert.deepEqual(catalogCacheLife(result, true), { stale: 30, revalidate: 1, expire: 300 });
   assert.equal(catalogCacheLife(result, false), "seconds");
-  assert.equal(catalogCacheLife({ ok: true, data: [] }, false), "minutes");
+  assert.deepEqual(catalogCacheLife({ ok: true, data: [] }, false), { stale: 300, revalidate: 60, expire: 60 * 60 * 24 * 30 });
 });
