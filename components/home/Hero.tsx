@@ -6,6 +6,7 @@ import { RevealOnScroll } from "@/components/animations/RevealOnScroll";
 import { ButtonLink } from "@/components/ui/Button";
 import { getBanners } from "@/lib/catalog";
 import { HeroCarousel } from "./HeroCarousel";
+import { HeroSlideshow } from "./HeroSlideshow";
 
 const PROMISES = ["Order on WhatsApp", "Delivery or pickup", "No account needed"];
 
@@ -16,7 +17,9 @@ const delay = (ms: number): CSSProperties => ({ animationDelay: `${ms}ms` });
 export function Hero() {
   return (
     <section className="container-page pt-4 sm:pt-6" aria-labelledby="hero-heading">
-      <div className="group/hero relative animate-hero-rise overflow-hidden rounded-3xl bg-linear-to-br from-blue-700 via-blue-600 to-sky-500 text-white shadow-[0_20px_50px_-28px_rgba(30,64,175,0.6)]">
+      {/* Phones get a full-bleed photo slideshow; larger screens the two-photo banner. */}
+      <HeroSlideshow className="animate-hero-rise md:hidden" />
+      <div className="group/hero relative hidden animate-hero-rise overflow-hidden rounded-3xl md:block bg-linear-to-br from-blue-700 via-blue-600 to-sky-500 text-white shadow-[0_20px_50px_-28px_rgba(30,64,175,0.6)]">
         <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-24 size-72 animate-hero-pulse rounded-full border border-white/20" />
         <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 -left-16 size-56 animate-hero-pulse rounded-full bg-white/10 blur-2xl" style={delay(1500)} />
         <div className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 p-5 sm:gap-8 sm:p-8 lg:px-12">
@@ -38,12 +41,12 @@ export function Hero() {
           <div aria-hidden="true" className="relative h-40 w-30 sm:h-56 sm:w-60 lg:h-64 lg:w-72">
             <div className="absolute left-0 top-0 h-[86%] w-[72%] animate-hero-float">
               <div className="relative size-full -rotate-3 animate-hero-photo overflow-hidden rounded-2xl border-[3px] border-white bg-slate-100 shadow-lg transition-[rotate,scale] duration-500 ease-out-soft group-hover/hero:rotate-0 group-hover/hero:scale-[1.03] sm:border-4" style={delay(250)}>
-                <Image src="/images/editorial/look-denim-main.webp" alt="" fill sizes="(min-width: 1024px) 210px, (min-width: 640px) 175px, 90px" priority className="animate-hero-zoom object-cover object-[50%_40%]" />
+                <Image src="/images/editorial/look-denim-main.webp" alt="" fill sizes="(min-width: 1024px) 210px, (min-width: 640px) 175px, 90px" className="animate-hero-zoom object-cover object-[50%_40%]" />
               </div>
             </div>
             <div className="absolute bottom-0 right-0 h-[64%] w-[52%] animate-hero-float" style={{ animationDelay: "-2.5s" }}>
               <div className="relative size-full rotate-6 animate-hero-photo overflow-hidden rounded-2xl border-[3px] border-white bg-blue-50 shadow-lg transition-[rotate,scale] duration-500 ease-out-soft group-hover/hero:rotate-2 group-hover/hero:scale-105 sm:border-4" style={delay(450)}>
-                <Image src="/images/editorial/look-denim-detail.webp" alt="" fill sizes="(min-width: 1024px) 150px, (min-width: 640px) 125px, 64px" priority className="animate-hero-zoom object-cover object-top" style={{ animationDelay: "-7s" }} />
+                <Image src="/images/editorial/look-denim-detail.webp" alt="" fill sizes="(min-width: 1024px) 150px, (min-width: 640px) 125px, 64px" className="animate-hero-zoom object-cover object-top" style={{ animationDelay: "-7s" }} />
               </div>
             </div>
           </div>
