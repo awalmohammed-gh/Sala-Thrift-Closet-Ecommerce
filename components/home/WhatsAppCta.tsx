@@ -1,5 +1,6 @@
 import { FaWhatsapp } from "react-icons/fa";
 import { FiArrowRight } from "react-icons/fi";
+import { RevealOnScroll } from "@/components/animations/RevealOnScroll";
 import { ButtonLink } from "@/components/ui/Button";
 import { getSettings } from "@/lib/catalog";
 import { supportChatUrl } from "@/lib/whatsapp";
@@ -11,7 +12,7 @@ export async function WhatsAppCta() {
 
   return (
     <section className="container-page py-6 sm:py-8" aria-labelledby="whatsapp-cta-heading">
-      <div className="flex flex-col gap-4 rounded-2xl border border-success/15 bg-success-50 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+      <RevealOnScroll className="flex flex-col gap-4 rounded-2xl border border-success/15 bg-success-50 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div className="flex items-center gap-3">
           <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-whatsapp text-white"><FaWhatsapp className="size-6" aria-hidden="true" /></span>
           <div>
@@ -28,7 +29,7 @@ export async function WhatsAppCta() {
             Contact us
           </ButtonLink>
         )}
-      </div>
+      </RevealOnScroll>
     </section>
   );
 }

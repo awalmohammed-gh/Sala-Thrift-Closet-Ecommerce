@@ -2,6 +2,7 @@ import { FiArrowRight, FiPackage } from "react-icons/fi";
 import { StaggerContainer } from "@/components/animations/StaggerContainer";
 import { ProductGrid, ProductGridSkeleton } from "@/components/products/ProductGrid";
 import { ButtonLink } from "@/components/ui/Button";
+import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getProducts, getSettings, type ProductQuery } from "@/lib/catalog";
 import { SectionHeading } from "./SectionHeading";
@@ -20,9 +21,11 @@ interface ProductSectionProps {
   priorityCount?: number;
   /** Adds a full-width "see more" button under the grid. */
   moreLabel?: string;
+  /** First section on the page: its cards rise in after the banner instead of on scroll. */
+  intro?: boolean;
 }
 
-async function ProductSection({ id, eyebrow, title, description, href, query, hideWhenEmpty = false, tone = "plain", priorityCount, moreLabel }: ProductSectionProps) {
+async function ProductSection({ id, eyebrow, title, description, href, query, hideWhenEmpty = false, tone = "plain", priorityCount, moreLabel, intro = false }: ProductSectionProps) {
   const result = await getProducts(query);
   if (result && result.items.length === 0 && hideWhenEmpty) return null;
 
@@ -37,7 +40,7 @@ async function ProductSection({ id, eyebrow, title, description, href, query, hi
             <ProductGrid
               products={result.items}
               priorityCount={priorityCount}
-              className="gap-y-4 sm:gap-y-5 xl:grid-cols-4"
+              className={cn("gap-y-4 sm:gap-y-5 xl:grid-cols-4", intro && "stagger-in")}
               empty={
                 <EmptyState
                   icon={<FiPackage />}
@@ -79,7 +82,7 @@ export async function FeaturedProducts() {
 export async function NewArrivals() {
   const { storefront } = await getSettings();
   if (!storefront.showNewArrivals) return null;
-  return <ProductSection id="new-heading" eyebrow="Just in" title="Fresh in the closet" href="/shop?sort=newest" query={{ sort: "newest", limit: 12 }} priorityCount={4} moreLabel="See all items" />;
+  return <ProductSection id="new-heading" eyebrow="Just in" title="Fresh in the closet" href="/shop?sort=newest" query={{ sort: "newest", limit: 12 }} priorityCount={4} moreLabel="See all items" intro />;
 }
 
 export function SectionSkeleton() {

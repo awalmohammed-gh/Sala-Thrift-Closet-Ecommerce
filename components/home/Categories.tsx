@@ -7,7 +7,7 @@ export async function Categories() {
   if (!categories.some((category) => (category.productCount ?? 0) > 0)) return null;
   return (
     <section className="container-page pt-5" aria-label="Shop by category">
-      <CategoryChips categories={categories} hrefFor={(slug) => (slug ? `/categories/${slug}` : "/shop")} scroll />
+      <CategoryChips categories={categories} hrefFor={(slug) => (slug ? `/categories/${slug}` : "/shop")} scroll animated />
     </section>
   );
 }
