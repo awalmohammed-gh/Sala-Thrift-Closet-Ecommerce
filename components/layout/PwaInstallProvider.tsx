@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
-import { FiDownload, FiMenu, FiMoreVertical, FiPlusSquare, FiShare } from "react-icons/fi";
+import { FiCheck, FiCopy, FiDownload, FiGlobe, FiLink, FiMenu, FiMoreVertical, FiPlusSquare, FiShare } from "react-icons/fi";
 import { Modal } from "@/components/ui/Modal";
 import { installPlatform, isAdminPath, isStandalone, PWA_APPS, type InstallPlatform, type PwaApp } from "@/lib/pwa";
 
@@ -15,6 +15,8 @@ interface InstallContextValue {
   platform: InstallPlatform;
   /** True once this device has installed the app, even when the site is later opened in the browser. */
   isInstalled: (app: PwaApp) => boolean;
+  /** Showing `app` inside the other installed app's window, where it cannot be installed. */
+  inOtherApp: (app: PwaApp) => boolean;
   guideOpen: boolean;
   /** The browser's own install dialog is ready (Chrome, Edge, Samsung Internet). */
   canPrompt: (app: PwaApp) => boolean;
@@ -68,6 +70,26 @@ function subscribeInstalled(notify: () => void) {
 }
 
 const currentApp = (): PwaApp => isAdminPath(window.location.pathname) ? "admin" : "store";
+
+/*
+ * The installed app this window was launched as. A Home Screen window opens on its own app,
+ * so the first page of the session decides. Moving between store and admin later stays in
+ * the same window, and must not count as the other app being installed.
+ */
+const RUNNING_KEY = "salasty:running-app";
+
+function readRunningApp(): PwaApp | "" {
+  if (!isStandalone()) return "";
+  try {
+    const saved = sessionStorage.getItem(RUNNING_KEY);
+    if (saved === "store" || saved === "admin") return saved;
+    const app = currentApp();
+    sessionStorage.setItem(RUNNING_KEY, app);
+    return app;
+  } catch {
+    return currentApp();
+  }
+}
 
 function subscribeDisplayMode(notify: () => void) {
   const media = window.matchMedia("(display-mode: standalone)");
@@ -129,28 +151,42 @@ function guideFor(platform: InstallPlatform, title: string): { steps: GuideStep[
   }
 }
 
+/** Inside one installed app, the other app has to be installed from the browser. */
+function openInBrowserGuide(link: string): { steps: GuideStep[]; note?: ReactNode } {
+  return {
+    steps: [
+      { badge: <FiLink className="size-5" />, title: "Copy the link", text: <span className="break-all">{link}</span> },
+      { badge: <FiGlobe className="size-5" />, title: "Open it in your browser", text: "Chrome on Android, or Safari on iPhone." },
+      { badge: <FiDownload className="size-5" />, title: "Install from there", text: "Tap the download button on the page and follow the steps." },
+    ],
+  };
+}
+
 /** Capture beforeinstallprompt once, before async headers and their buttons mount. */
 export function PwaInstallProvider({ children }: { children: ReactNode }) {
   const standalone = useSyncExternalStore(subscribeDisplayMode, isStandalone, serverSnapshot);
   const platform = useSyncExternalStore(emptySubscribe, installPlatform, serverPlatform);
   const installedApps = useSyncExternalStore(subscribeInstalled, readInstalled, () => "");
   const isInstalled = (app: PwaApp) => installedApps.split(",").includes(app);
+  const runningApp = useSyncExternalStore(subscribeDisplayMode, readRunningApp, () => "" as const);
+  const inOtherApp = (app: PwaApp) => standalone && runningApp !== "" && runningApp !== app;
   const [deferred, setDeferred] = useState<{ app: PwaApp; event: InstallEvent } | null>(null);
   const [guideApp, setGuideApp] = useState<PwaApp | null>(null);
+  const [copied, setCopied] = useState(false);
 
-  // Opened from the Home Screen, or Chrome reports the app as installed: remember it.
+  // Launched from the Home Screen, or Chrome reports the app as installed: remember it.
   useEffect(() => {
-    const app = currentApp();
     if (standalone) {
-      rememberInstalled(app, true);
+      if (runningApp) rememberInstalled(runningApp, true);
       return;
     }
+    const app = currentApp();
     const nav = navigator as Navigator & { getInstalledRelatedApps?: () => Promise<unknown[]> };
     if (!nav.getInstalledRelatedApps) return;
     let cancelled = false;
     nav.getInstalledRelatedApps().then((apps) => { if (!cancelled && apps.length) rememberInstalled(app, true); }).catch(() => undefined);
     return () => { cancelled = true; };
-  }, [standalone]);
+  }, [standalone, runningApp]);
 
   useEffect(() => {
     const beforeInstall = (event: Event) => {
@@ -173,7 +209,12 @@ export function PwaInstallProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function install(app: PwaApp): Promise<boolean> {
-    if (standalone || isInstalled(app)) return false;
+    if (isInstalled(app)) return false;
+    // Phones only install from the browser: inside the other app, explain how to get there.
+    if (standalone) {
+      if (inOtherApp(app)) setGuideApp(app);
+      return false;
+    }
     if (deferred?.app === app) {
       const event = deferred.event;
       setDeferred(null); // A native install event can be used only once.
@@ -192,18 +233,29 @@ export function PwaInstallProvider({ children }: { children: ReactNode }) {
   }
 
   const canPrompt = (app: PwaApp) => deferred?.app === app;
-  const canOffer = (app: PwaApp) => !standalone && !isInstalled(app) && (canPrompt(app) || platform !== "desktop");
+  const canOffer = (app: PwaApp) => !isInstalled(app) && (standalone ? inOtherApp(app) : canPrompt(app) || platform !== "desktop");
   const config = guideApp ? PWA_APPS[guideApp] : null;
-  const guide = config ? guideFor(platform, config.title) : null;
+  const fromOtherApp = guideApp !== null && inOtherApp(guideApp);
+  const appLink = guideApp ? `${window.location.origin}${guideApp === "admin" ? "/admin" : "/"}` : "";
+  const guide = config ? (fromOtherApp ? openInBrowserGuide(appLink) : guideFor(platform, config.title)) : null;
+  const closeGuide = () => {
+    setGuideApp(null);
+    setCopied(false);
+  };
+  const copyLink = () => {
+    void navigator.clipboard?.writeText(appLink).then(() => setCopied(true), () => setCopied(false));
+  };
 
   return (
-    <InstallContext.Provider value={{ standalone, platform, isInstalled, guideOpen: guideApp !== null, canPrompt, canOffer, install }}>
+    <InstallContext.Provider value={{ standalone, platform, isInstalled, inOtherApp, guideOpen: guideApp !== null, canPrompt, canOffer, install }}>
       {children}
       <Modal
         open={guideApp !== null}
-        onClose={() => setGuideApp(null)}
+        onClose={closeGuide}
         title={guideApp === "admin" ? "Get the Admin app" : "Get the SALASTY app"}
-        description={`${guide?.steps.length === 2 ? "Two" : "Three"} quick steps. No app store needed.`}
+        description={fromOtherApp
+          ? `You're in the ${runningApp === "admin" ? "Admin" : "SALASTY"} app. Each app is installed separately from your browser.`
+          : `${guide?.steps.length === 2 ? "Two" : "Three"} quick steps. No app store needed.`}
         size="sm"
       >
         {config && guide && (
@@ -227,11 +279,16 @@ export function PwaInstallProvider({ children }: { children: ReactNode }) {
               ))}
             </ol>
             {guide.note && <p className="mt-4 rounded-xl bg-cream-200 p-3 text-xs leading-relaxed text-ink">{guide.note}</p>}
+            {fromOtherApp && (
+              <button type="button" onClick={copyLink} className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-brand/30 bg-brand-50 px-4 text-sm font-semibold text-brand transition-colors hover:bg-brand-100">
+                {copied ? <><FiCheck className="size-4" aria-hidden="true" />Link copied</> : <><FiCopy className="size-4" aria-hidden="true" />Copy link</>}
+              </button>
+            )}
             <p className="mt-4 text-xs leading-relaxed text-muted">
               {guideApp === "admin" ? "Then open it from your Home Screen and sign in with your staff account." : "Then open it from your Home Screen."}
               {(platform === "ios-safari" || platform === "ios-browser") && " Order alerts work from inside the installed app on iOS 16.4 or later."}
             </p>
-            <button type="button" onClick={() => setGuideApp(null)} className="mt-5 min-h-11 w-full rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-deep">Got it</button>
+            <button type="button" onClick={closeGuide} className="mt-5 min-h-11 w-full rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-deep">Got it</button>
           </div>
         )}
       </Modal>

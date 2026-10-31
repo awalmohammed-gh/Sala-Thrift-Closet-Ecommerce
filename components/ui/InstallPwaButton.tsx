@@ -15,8 +15,9 @@ export interface InstallPwaButtonProps {
 export function InstallPwaButton({ variant = "inline", className, onInstalled }: InstallPwaButtonProps) {
   const pathname = usePathname();
   const app = isAdminPath(pathname) ? "admin" : "store";
-  const { standalone, isInstalled, canOffer, install } = usePwaInstall();
-  if (standalone || isInstalled(app)) return null;
+  const { standalone, isInstalled, inOtherApp, canOffer, install } = usePwaInstall();
+  // Hidden inside this app's own window and once it is installed; inside the other app it explains how to get this one.
+  if (isInstalled(app) || (standalone && !inOtherApp(app))) return null;
   if (!canOffer(app) && variant !== "mobile" && variant !== "login-card") return null;
 
   const label = app === "admin" ? "Download Admin App" : "Install SALASTY THRIFT CLOSET App";

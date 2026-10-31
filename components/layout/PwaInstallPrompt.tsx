@@ -9,13 +9,14 @@ import { cn } from "@/lib/utils";
 
 /** A site invitation, not an automatic browser permission or installation request. */
 export function PwaInstallPrompt({ app }: { app: PwaApp }) {
-  const { guideOpen, canPrompt, canOffer, install } = usePwaInstall();
+  const { standalone, guideOpen, canPrompt, canOffer, install } = usePwaInstall();
   const [due, setDue] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [opening, setOpening] = useState(false);
   const titleId = useId();
   const key = `salasty:install-invite:${app}`;
-  const eligible = canOffer(app);
+  // Never pop up inside an installed app; the header button still offers the other app there.
+  const eligible = !standalone && canOffer(app);
 
   useEffect(() => {
     if (!eligible) return;
