@@ -1,3 +1,4 @@
+import { waitUntil } from "@vercel/functions";
 import type { UploadApiResponse } from "cloudinary";
 import type { ImageAsset, UploadFolder } from "@salasty-thrift-closet/shared";
 import { configureCloudinary } from "../../../../config/cloudinary.js";
@@ -88,5 +89,6 @@ export function cleanupRemovedImages(
 ): void {
   const keep = new Set(after.filter(Boolean).map((image) => image!.publicId));
   const removed = before.filter((image): image is ImageAsset => !!image && !keep.has(image.publicId)).map((i) => i.publicId);
-  if (removed.length) void deleteImages(removed);
+  // waitUntil keeps a Vercel function alive until Cloudinary confirms, after the response is sent.
+  if (removed.length) waitUntil(deleteImages(removed));
 }
