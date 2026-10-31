@@ -27,7 +27,7 @@ export function AdminHeader({ onOpenMenu, menuOpen }: { onOpenMenu: () => void; 
         <FiMenu className="size-6" />
       </button>
       <div className="flex min-w-0 items-center gap-2 text-sm">
-        <span className="hidden text-muted md:inline">Workspace</span>
+        <span className="hidden text-muted md:inline">Admin</span>
         <FiChevronRight aria-hidden="true" className="hidden size-3.5 shrink-0 text-muted/60 md:block" />
         <p className="min-w-0 truncate font-display text-base font-semibold text-ink">{title}</p>
       </div>
