@@ -28,6 +28,21 @@ describe("admin authentication", () => {
     expect(wrongPassword.headers["set-cookie"]).toBeUndefined();
   });
 
+  it("accepts the right password after an iPhone keyboard changed it", async () => {
+    // Capitalised email with spaces, Smart Punctuation dashes and a space copied from a chat.
+    for (const attempt of [
+      { email: ` ${ADMIN_EMAIL.toUpperCase()} `, password: "correct-horse-42" },
+      { email: ADMIN_EMAIL, password: "correct—horse–42" },
+      { email: ADMIN_EMAIL, password: " correct-horse-42 " },
+    ]) {
+      await request(app).post("/api/admin/auth/login").set("Origin", ORIGIN).send(attempt).expect(200);
+    }
+  });
+
+  it("still rejects a wrong password with a different letter case", async () => {
+    await request(app).post("/api/admin/auth/login").set("Origin", ORIGIN).send({ email: ADMIN_EMAIL, password: "Correct-horse-42" }).expect(401);
+  });
+
   it("sets an HTTP-only session cookie and returns a CSRF token on login", async () => {
     const res = await request(app)
       .post("/api/admin/auth/login")

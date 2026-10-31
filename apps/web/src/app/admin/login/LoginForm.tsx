@@ -57,7 +57,11 @@ export function LoginForm() {
       <Input
         label="Admin email or ID"
         type="text"
+        inputMode="email"
         autoComplete="username"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
         required
         value={email}
         onChange={(e) => setEmail(e.target.value)}
@@ -68,6 +72,10 @@ export function LoginForm() {
         label="Password"
         type={showPassword ? "text" : "password"}
         autoComplete="current-password"
+        // A shown password is a plain text box: stop the iPhone capitalising or "correcting" it.
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
         required
         value={password}
         onChange={(e) => setPassword(e.target.value)}

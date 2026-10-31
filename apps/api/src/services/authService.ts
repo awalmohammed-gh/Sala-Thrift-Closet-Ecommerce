@@ -96,10 +96,27 @@ export function toAdminDTO(admin: Pick<AdminDoc, "_id" | "name" | "email" | "rol
   return { id: admin._id.toString(), name: admin.name, email: admin.email, role: admin.role };
 }
 
+/**
+ * Phone keyboards change pasted or typed passwords: iOS "Smart Punctuation" turns ' " - and ...
+ * into curly quotes, dashes and an ellipsis, and copying from a chat often adds a space.
+ * The result is still the same password the admin meant to enter.
+ */
+export function normalizeTypedPassword(password: string): string {
+  return password
+    .replace(/[‘’‚′]/g, "'")
+    .replace(/[“”„″]/g, "\"")
+    .replace(/[–—]/g, "-")
+    .replace(/…/g, "...")
+    .trim();
+}
+
 /** Verifies credentials. Always returns the same error for unknown emails, wrong passwords and disabled accounts. */
 export async function authenticate(email: string, password: string): Promise<AdminDoc> {
   const admin = await Admin.findOne({ email }).select("+passwordHash").lean<AdminDoc>();
-  const valid = await bcrypt.compare(password, admin?.passwordHash ?? DUMMY_HASH);
+  const hash = admin?.passwordHash ?? DUMMY_HASH;
+  const normalized = normalizeTypedPassword(password);
+  // The exact password first; the keyboard-normalized form only when it differs.
+  const valid = (await bcrypt.compare(password, hash)) || (normalized !== password && normalized !== "" && (await bcrypt.compare(normalized, hash)));
   if (!admin || !valid || admin.status !== "active") {
     throw ApiError.unauthorized("Incorrect email or password.", "INVALID_CREDENTIALS");
   }
