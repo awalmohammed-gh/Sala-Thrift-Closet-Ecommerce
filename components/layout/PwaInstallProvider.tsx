@@ -1,0 +1,188 @@
+"use client";
+
+import { createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { FiDownload, FiMenu, FiMoreVertical, FiPlusSquare, FiShare } from "react-icons/fi";
+import { Modal } from "@/components/ui/Modal";
+import { installPlatform, isAdminPath, isStandalone, PWA_APPS, type InstallPlatform, type PwaApp } from "@/lib/pwa";
+
+interface InstallEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
+interface InstallContextValue {
+  standalone: boolean;
+  platform: InstallPlatform;
+  installedApp: PwaApp | null;
+  guideOpen: boolean;
+  /** The browser's own install dialog is ready (Chrome, Edge, Samsung Internet). */
+  canPrompt: (app: PwaApp) => boolean;
+  /** Installing is possible here: by the native dialog, or by following the guide on any phone. */
+  canOffer: (app: PwaApp) => boolean;
+  install: (app: PwaApp) => Promise<boolean>;
+}
+
+const InstallContext = createContext<InstallContextValue | null>(null);
+const emptySubscribe = () => () => {};
+const serverSnapshot = () => false;
+const serverPlatform = (): InstallPlatform => "desktop";
+
+function subscribeDisplayMode(notify: () => void) {
+  const media = window.matchMedia("(display-mode: standalone)");
+  media.addEventListener("change", notify);
+  window.addEventListener("pageshow", notify);
+  return () => {
+    media.removeEventListener("change", notify);
+    window.removeEventListener("pageshow", notify);
+  };
+}
+
+interface GuideStep { badge: ReactNode; title: ReactNode; text: ReactNode }
+
+const pill = (label: string) => <span className="rounded-lg bg-brand px-2 py-1 text-xs font-bold text-white">{label}</span>;
+
+/** Three taps per platform, worded the way each browser labels its buttons. */
+function guideFor(platform: InstallPlatform, title: string): { steps: GuideStep[]; note?: ReactNode } {
+  switch (platform) {
+    case "ios-safari":
+    case "ios-browser":
+      return {
+        steps: [
+          {
+            badge: <FiShare className="size-5" />,
+            title: "Tap the Share button",
+            text: platform === "ios-safari"
+              ? <>The square with an arrow, at the bottom of Safari. Don&apos;t see it? Tap <strong>•••</strong> first.</>
+              : <>In Chrome it&apos;s next to the address bar. In other browsers, look in the <strong>•••</strong> menu.</>,
+          },
+          { badge: <FiPlusSquare className="size-5" />, title: <>Tap &ldquo;Add to Home Screen&rdquo;</>, text: "Scroll down the list if you don't see it." },
+          { badge: pill("Add"), title: <>Tap &ldquo;Add&rdquo;</>, text: <>{title} appears on your Home Screen like any other app.</> },
+        ],
+        note: platform === "ios-browser" ? "Can't find it? Open this page in Safari and try again." : undefined,
+      };
+    case "android-samsung":
+      return {
+        steps: [
+          { badge: <FiMenu className="size-5" />, title: "Tap the menu", text: "The three lines at the bottom-right of the screen." },
+          { badge: <FiPlusSquare className="size-5" />, title: <>Tap &ldquo;Add page to&rdquo; → &ldquo;Home screen&rdquo;</>, text: "Some versions say “Install app” instead." },
+          { badge: pill("Add"), title: <>Tap &ldquo;Add&rdquo;</>, text: <>{title} appears on your Home screen.</> },
+        ],
+      };
+    case "android":
+      return {
+        steps: [
+          { badge: <FiMoreVertical className="size-5" />, title: "Tap the menu", text: "The three dots at the top-right of Chrome." },
+          { badge: <FiDownload className="size-5" />, title: <>Tap &ldquo;Install app&rdquo;</>, text: "Some phones say “Add to Home screen”." },
+          { badge: pill("Install"), title: <>Tap &ldquo;Install&rdquo;</>, text: <>{title} appears on your Home screen and in your app list.</> },
+        ],
+      };
+    default:
+      return {
+        steps: [
+          { badge: <FiDownload className="size-5" />, title: "Click the install icon", text: "At the right end of the address bar in Chrome or Edge." },
+          { badge: pill("Install"), title: <>Click &ldquo;Install&rdquo;</>, text: <>{title} opens in its own window.</> },
+        ],
+        note: <>No icon? Open the browser menu and choose <strong>Install</strong>. In Safari on a Mac, choose <strong>File → Add to Dock</strong>.</>,
+      };
+  }
+}
+
+/** Capture beforeinstallprompt once, before async headers and their buttons mount. */
+export function PwaInstallProvider({ children }: { children: ReactNode }) {
+  const standalone = useSyncExternalStore(subscribeDisplayMode, isStandalone, serverSnapshot);
+  const platform = useSyncExternalStore(emptySubscribe, installPlatform, serverPlatform);
+  const [deferred, setDeferred] = useState<{ app: PwaApp; event: InstallEvent } | null>(null);
+  const [installedApp, setInstalledApp] = useState<PwaApp | null>(null);
+  const [guideApp, setGuideApp] = useState<PwaApp | null>(null);
+
+  useEffect(() => {
+    const currentApp = (): PwaApp => isAdminPath(window.location.pathname) ? "admin" : "store";
+    const beforeInstall = (event: Event) => {
+      event.preventDefault();
+      setDeferred({ app: currentApp(), event: event as InstallEvent });
+    };
+    const installed = () => {
+      setInstalledApp(currentApp());
+      setDeferred(null);
+      setGuideApp(null);
+    };
+    window.addEventListener("beforeinstallprompt", beforeInstall);
+    window.addEventListener("appinstalled", installed);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", beforeInstall);
+      window.removeEventListener("appinstalled", installed);
+    };
+  }, []);
+
+  async function install(app: PwaApp): Promise<boolean> {
+    if (standalone || installedApp === app) return false;
+    if (deferred?.app === app) {
+      const event = deferred.event;
+      setDeferred(null); // A native install event can be used only once.
+      try {
+        await event.prompt();
+        const accepted = (await event.userChoice).outcome === "accepted";
+        if (accepted) setInstalledApp(app);
+        return accepted;
+      } catch {
+        setGuideApp(app);
+        return false;
+      }
+    }
+    setGuideApp(app);
+    return false;
+  }
+
+  const canPrompt = (app: PwaApp) => deferred?.app === app;
+  const canOffer = (app: PwaApp) => !standalone && installedApp !== app && (canPrompt(app) || platform !== "desktop");
+  const config = guideApp ? PWA_APPS[guideApp] : null;
+  const guide = config ? guideFor(platform, config.title) : null;
+
+  return (
+    <InstallContext.Provider value={{ standalone, platform, installedApp, guideOpen: guideApp !== null, canPrompt, canOffer, install }}>
+      {children}
+      <Modal
+        open={guideApp !== null}
+        onClose={() => setGuideApp(null)}
+        title={guideApp === "admin" ? "Get the Admin app" : "Get the SALASTY app"}
+        description={`${guide?.steps.length === 2 ? "Two" : "Three"} quick steps. No app store needed.`}
+        size="sm"
+      >
+        {config && guide && (
+          <div className="pb-[env(safe-area-inset-bottom)]">
+            <div className="mb-5 flex items-center gap-3 rounded-2xl bg-brand-50 p-3">
+              {/* Static public PNGs; native img avoids adding an image loader dependency to the guide. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={config.icon} alt="" width={52} height={52} className="rounded-xl border border-line" />
+              <div><p className="font-semibold text-ink">{config.title}</p><p className="text-xs text-muted">{guideApp === "admin" ? "Your staff portal, one tap away" : "Your store, one tap away"}</p></div>
+            </div>
+            <ol className="space-y-3">
+              {guide.steps.map((step, index) => (
+                <li key={index} className="flex items-center gap-3 rounded-2xl border border-line p-3">
+                  <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">{index + 1}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-ink">{step.title}</p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-muted">{step.text}</p>
+                  </div>
+                  <span aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-cream-200 text-brand">{step.badge}</span>
+                </li>
+              ))}
+            </ol>
+            {guide.note && <p className="mt-4 rounded-xl bg-cream-200 p-3 text-xs leading-relaxed text-ink">{guide.note}</p>}
+            <p className="mt-4 text-xs leading-relaxed text-muted">
+              {guideApp === "admin" ? "Then open it from your Home Screen and sign in with your staff account." : "Then open it from your Home Screen."}
+              {(platform === "ios-safari" || platform === "ios-browser") && " Order alerts work from inside the installed app on iOS 16.4 or later."}
+            </p>
+            <button type="button" onClick={() => setGuideApp(null)} className="mt-5 min-h-11 w-full rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-deep">Got it</button>
+          </div>
+        )}
+      </Modal>
+    </InstallContext.Provider>
+  );
+}
+
+export function usePwaInstall() {
+  const context = useContext(InstallContext);
+  if (!context) throw new Error("usePwaInstall must be used inside PwaInstallProvider");
+  return context;
+}
