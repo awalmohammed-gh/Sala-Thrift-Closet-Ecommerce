@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 /** `edges` are the colours at each photo's left and right sides, so a portrait photo can melt into a wide banner. */
 const SLIDES = [
   { image: "/images/editorial/look-denim-main.webp", edges: "#b6b5ba, #bebdc4", tag: "New stock every week", lead: "Good finds.", accent: "Great", rest: " prices.", text: "Pick what you love and send your order on WhatsApp." },
-  { image: "/images/editorial/look-denim-detail.webp", edges: "#555753, #432c0d", tag: "Just in", lead: "Wide-leg denim,", accent: "ready", rest: " to wear.", text: "Fresh pieces land on the rail every week." },
+  { image: "/images/editorial/look-denim-detail.webp", edges: "#555753, #432c0d", tag: "Just in", lead: "Wide leg denim,", accent: "ready", rest: " to wear.", text: "Fresh pieces land on the rail every week." },
   { image: "/images/editorial/look-wrap-dress.webp", edges: "#79796e, #bcbeb8", tag: "No account needed", lead: "Order in minutes,", accent: "right", rest: " on WhatsApp.", text: "Add to cart, tap send, and we confirm with you." },
 ] as const;
 

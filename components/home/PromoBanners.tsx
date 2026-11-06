@@ -34,7 +34,7 @@ export async function PromoBanners() {
             <span className="mt-1 text-sm">Quality. Style. Affordability.</span>
             <span className="mt-2.5 inline-flex min-h-9 items-center gap-1.5 rounded-full bg-brand-deep px-4 text-sm font-bold text-white sm:mt-3">Explore Shop{ARROW}</span>
           </span>
-          <span className="absolute inset-y-0 right-0 w-[40%] [mask-image:linear-gradient(to_right,transparent,black_35%)]">
+          <span className="absolute inset-y-0 right-0 w-[40%] mask-[linear-gradient(to_right,transparent,black_35%)]">
             <Image src="/images/editorial/promo-shopper.webp" alt="" fill sizes={PHOTO_SIZES} className="object-cover object-[50%_12%] mix-blend-multiply transition-[scale] duration-700 ease-out-soft group-hover:scale-105" />
           </span>
         </Link>
