@@ -8,7 +8,8 @@ import { Benefits } from "@/components/home/Benefits";
 import { PageHero } from "@/components/layout/PageHero";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { siteConfig } from "@/config/site";
-import { getMetadataSettings, getSettings } from "@/lib/catalog";
+import { getCategories, getMetadataSettings, getSettings } from "@/lib/catalog";
+import { marketAisles } from "@/lib/productDisplay";
 import { supportChatUrl } from "@/lib/whatsapp";
 import Link from "next/link";
 
@@ -16,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const { storeName } = await getMetadataSettings();
   return {
     title: "About us",
-    description: `${storeName} is a Ghanaian thrift clothing store. Learn how ordering on WhatsApp works.`,
+    description: `${storeName} is a Ghanaian thrift store selling many kinds of products. Learn how ordering on WhatsApp works.`,
     alternates: { canonical: "/about" },
   };
 }
@@ -33,8 +34,23 @@ async function AboutIntro() {
   return (
     <p className="mt-3 max-w-[62%] text-sm leading-relaxed text-blue-50 sm:max-w-md sm:text-lg lg:max-w-xl">
       {settings.storeDescription ||
-        `${settings.storeName} brings thrift clothing together in one friendly closet, from everyday tees and shirts to jeans, hoodies and jackets.`}
+        `${settings.storeName} brings many kinds of products together in one friendly store.`}
     </p>
+  );
+}
+
+/** The admin's live categories, so a new kind of product shows up here once it has stock. */
+async function AboutRange() {
+  const aisles = marketAisles(await getCategories());
+  if (!aisles.length) return null;
+  return (
+    <ul className="mt-5 flex flex-wrap gap-2">
+      {aisles.map((aisle) => (
+        <li key={aisle.id}>
+          <Link href={`/categories/${aisle.slug}`} className="inline-flex min-h-11 items-center rounded-full bg-brand-50 px-4 text-sm font-bold text-brand-deep transition-colors hover:bg-brand-100">{aisle.name}</Link>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -74,6 +90,17 @@ export default function AboutPage() {
           <AboutIntro />
         </Suspense>
       </PageHero>
+
+      <section className="container-page py-10 sm:py-14" aria-labelledby="range-heading">
+        <RevealOnScroll>
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">What we sell</p>
+          <h2 id="range-heading" className="mt-1.5 text-3xl font-bold tracking-[-0.03em] text-brand-deep sm:text-4xl">One store, many kinds of products</h2>
+          <p className="mt-2 max-w-2xl text-muted">We don&apos;t sell just one thing. Our website brings many kinds of products together, so you can shop them all in one place and send everything in a single WhatsApp order.</p>
+          <Suspense fallback={<div className="skeleton mt-5 h-11 w-full max-w-md rounded-full" />}>
+            <AboutRange />
+          </Suspense>
+        </RevealOnScroll>
+      </section>
 
       <Benefits />
 
