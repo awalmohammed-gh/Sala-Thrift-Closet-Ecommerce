@@ -179,6 +179,11 @@ describe("WhatsApp checkout", () => {
     expect(res.body.error.details.quote.total).toBe(4500);
   });
 
+  it("answers an empty order request with a validation error, not a server error", async () => {
+    const res = await request(app).post("/api/orders/whatsapp").set("Origin", ORIGIN).send({}).expect(400);
+    expect(res.body.error.code).toBe("VALIDATION_ERROR");
+  });
+
   it("validates customer details", async () => {
     const res = await request(app)
       .post("/api/orders/whatsapp")

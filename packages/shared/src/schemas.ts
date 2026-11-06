@@ -404,7 +404,9 @@ export const checkoutCustomerSchema = z
     },
     {
       // Still check the location when other fields (e.g. phone) are invalid, so every error shows at once.
+      // Running this check forces it even when the customer object itself is missing, so rule that out first.
       when: (payload) =>
+        typeof payload.value === "object" && payload.value !== null &&
         !payload.issues.some((issue) => ["fulfillmentMethod", "deliveryLocation"].includes(String(issue.path?.[0]))),
     },
   );

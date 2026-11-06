@@ -152,6 +152,12 @@ function SettingsForm({ initial, onSaved }: { initial: StoreSettingsDTO; onSaved
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (deliveryFeeText.trim() && form.deliveryFee === null) {
+      setErrors({ deliveryFee: "Enter an amount like 25 or 25.50" });
+      choose("whatsapp");
+      toast.error("Please fix the highlighted fields.");
+      return;
+    }
     const parsed = settingsInputSchema.safeParse(form);
     if (!parsed.success) {
       const next = flattenIssues(parsed.error.issues);

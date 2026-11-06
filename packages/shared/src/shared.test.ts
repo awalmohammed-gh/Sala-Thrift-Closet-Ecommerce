@@ -239,6 +239,12 @@ describe("schemas", () => {
     expect(checkoutCustomerSchema.safeParse({ ...details, whatsappConfirmed: false }).success).toBe(false);
   });
 
+  it("reports missing customer details instead of crashing", () => {
+    for (const customer of [undefined, null, "Ama", 5]) {
+      expect(checkoutCustomerSchema.safeParse(customer).success).toBe(false);
+    }
+  });
+
   it("requires a delivery location for delivery orders", () => {
     const missing = checkoutCustomerSchema.safeParse({ name: "Ama", phone: "0241234567", whatsappConfirmed: true, fulfillmentMethod: "delivery" });
     expect(missing.success).toBe(false);
