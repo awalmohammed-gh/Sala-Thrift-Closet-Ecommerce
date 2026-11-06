@@ -1,9 +1,10 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
-import { FiCheck, FiCopy, FiDownload, FiGlobe, FiLink, FiMenu, FiMoreVertical, FiPlusSquare, FiShare } from "react-icons/fi";
+import { FiCheck, FiCopy, FiDownload, FiGlobe, FiLink, FiMenu, FiMoreVertical, FiPlusSquare } from "react-icons/fi";
 import { Modal } from "@/components/ui/Modal";
 import { installPlatform, isAdminPath, isStandalone, PWA_APPS, type InstallPlatform, type PwaApp } from "@/lib/pwa";
+import { IosInstallGuide } from "./IosInstallGuide";
 
 interface InstallEvent extends Event {
   prompt(): Promise<void>;
@@ -108,22 +109,6 @@ const pill = (label: string) => <span className="rounded-lg bg-brand px-2 py-1 t
 /** Three taps per platform, worded the way each browser labels its buttons. */
 function guideFor(platform: InstallPlatform, title: string): { steps: GuideStep[]; note?: ReactNode } {
   switch (platform) {
-    case "ios-safari":
-    case "ios-browser":
-      return {
-        steps: [
-          {
-            badge: <FiShare className="size-5" />,
-            title: "Tap the Share button",
-            text: platform === "ios-safari"
-              ? <>The square with an arrow, at the bottom of Safari. Don&apos;t see it? Tap <strong>•••</strong> first.</>
-              : <>In Chrome it&apos;s next to the address bar. In other browsers, look in the <strong>•••</strong> menu.</>,
-          },
-          { badge: <FiPlusSquare className="size-5" />, title: <>Tap &ldquo;Add to Home Screen&rdquo;</>, text: "Scroll down the list if you don't see it." },
-          { badge: pill("Add"), title: <>Tap &ldquo;Add&rdquo;</>, text: <>{title} appears on your Home Screen like any other app.</> },
-        ],
-        note: platform === "ios-browser" ? "Can't find it? Open this page in Safari and try again." : undefined,
-      };
     case "android-samsung":
       return {
         steps: [
@@ -242,6 +227,7 @@ export function PwaInstallProvider({ children }: { children: ReactNode }) {
     setGuideApp(null);
     setCopied(false);
   };
+  const isIos = platform.startsWith("ios-");
   const copyLink = () => {
     void navigator.clipboard?.writeText(appLink).then(() => setCopied(true), () => setCopied(false));
   };
@@ -249,8 +235,22 @@ export function PwaInstallProvider({ children }: { children: ReactNode }) {
   return (
     <InstallContext.Provider value={{ standalone, platform, isInstalled, inOtherApp, guideOpen: guideApp !== null, canPrompt, canOffer, install }}>
       {children}
+      {guideApp && config && isIos && !fromOtherApp && (
+        <IosInstallGuide
+          app={guideApp}
+          title={config.title}
+          icon={config.icon}
+          platform={platform}
+          link={appLink}
+          onClose={closeGuide}
+          onDone={() => {
+            rememberInstalled(guideApp, true);
+            closeGuide();
+          }}
+        />
+      )}
       <Modal
-        open={guideApp !== null}
+        open={guideApp !== null && (!isIos || fromOtherApp)}
         onClose={closeGuide}
         title={guideApp === "admin" ? "Get the Admin app" : "Get the SALASTY app"}
         description={fromOtherApp
@@ -286,7 +286,6 @@ export function PwaInstallProvider({ children }: { children: ReactNode }) {
             )}
             <p className="mt-4 text-xs leading-relaxed text-muted">
               {guideApp === "admin" ? "Then open it from your Home Screen and sign in with your staff account." : "Then open it from your Home Screen."}
-              {(platform === "ios-safari" || platform === "ios-browser") && " Order alerts work from inside the installed app on iOS 16.4 or later."}
             </p>
             <button type="button" onClick={closeGuide} className="mt-5 min-h-11 w-full rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-deep">Got it</button>
           </div>
