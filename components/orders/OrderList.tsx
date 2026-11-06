@@ -155,6 +155,7 @@ export function OrderList() {
           <div><dt className="text-muted">Fulfillment</dt><dd>{selected.fulfillmentMethod === "pickup" ? "Pickup" : "Delivery"}</dd></div>
           {selected.fulfillmentMethod === "delivery" && <div><dt className="text-muted">Delivery location</dt><dd>{selected.deliveryLocation}<br />{selected.deliveryAddress}</dd></div>}
           {selected.notes && <div><dt className="text-muted">Your notes</dt><dd>{selected.notes}</dd></div>}
+          {selected.fulfillmentMethod === "delivery" && <div><dt className="text-muted">Delivery fee</dt><dd>{selected.deliveryFee === null ? "To be confirmed" : formatGHS(selected.deliveryFee)}</dd></div>}
           <div><dt className="text-muted">Order total</dt><dd className="font-bold">{formatGHS(selected.total)}</dd></div>
         </dl>
         <OrderActions order={selected} />

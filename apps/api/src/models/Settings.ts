@@ -28,6 +28,8 @@ export interface SettingsDoc {
   whatsappOrderingEnabled: boolean;
   whatsappGreeting: string;
   whatsappSupportMessage: string;
+  /** Pesewas; null means the delivery fee is agreed on WhatsApp. */
+  deliveryFee: number | null;
   notifications: NotificationSettings;
   storefront: StorefrontSettings;
   createdAt: Date;
@@ -64,6 +66,7 @@ const settingsSchema = new Schema<SettingsDoc>(
     whatsappOrderingEnabled: { type: Boolean, default: true },
     whatsappGreeting: { type: String, default: "", trim: true, maxlength: 120 },
     whatsappSupportMessage: { type: String, default: "", trim: true, maxlength: 300 },
+    deliveryFee: { type: Number, default: null, min: 0 },
     notifications: {
       enabled: { type: Boolean, default: DEFAULT_NOTIFICATION_SETTINGS.enabled },
       newProducts: { type: Boolean, default: DEFAULT_NOTIFICATION_SETTINGS.newProducts },

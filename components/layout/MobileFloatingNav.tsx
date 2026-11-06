@@ -14,6 +14,7 @@ import {
   HiPhone,
   HiOutlinePhone,
 } from "react-icons/hi2";
+import { PopOnChange } from "@/components/animations/PopOnChange";
 import { useCart } from "@/hooks/useCart";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +34,7 @@ export function MobileFloatingNav() {
   return (
     <nav
       aria-label="Storefront bottom navigation"
-      className="fixed left-3 right-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-md rounded-2xl border border-brand/10 bg-white/90 p-1.5 shadow-lg backdrop-blur-md md:hidden"
+      className="fixed left-3 right-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-md rounded-2xl border border-brand/10 bg-white p-1.5 shadow-lg md:hidden"
     >
       <ul className="grid grid-cols-5 gap-1">
         {TABS.map((tab) => {
@@ -58,9 +59,9 @@ export function MobileFloatingNav() {
                 <span className="relative inline-flex">
                   <Icon aria-hidden="true" className={cn("size-5 transition-transform duration-200 motion-reduce:transition-none", active && "scale-110")} />
                   {isCart && count > 0 && (
-                    <span aria-hidden="true" className="absolute -right-2.5 -top-2 flex min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[9px] leading-4 font-bold tabular-nums text-white ring-2 ring-white">
+                    <PopOnChange value={count} aria-hidden="true" className="absolute -right-2.5 -top-2 min-w-4 rounded-full bg-brand px-1 text-center text-[9px] leading-4 font-bold tabular-nums text-white ring-2 ring-white">
                       {count > 99 ? "99+" : count}
-                    </span>
+                    </PopOnChange>
                   )}
                 </span>
                 <span>{tab.label}</span>

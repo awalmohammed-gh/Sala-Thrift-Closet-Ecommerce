@@ -25,8 +25,8 @@ export function ContactForm({ whatsappNumber, storeName }: { whatsappNumber: str
   }
 
   return (
-    <form onSubmit={submit} noValidate className="space-y-4 rounded-2xl border border-line bg-white p-5 sm:p-6">
-      <h2 className="text-lg font-semibold text-ink">Send us a message</h2>
+    <form onSubmit={submit} noValidate className="space-y-4 rounded-3xl border border-line bg-white p-5 shadow-card sm:p-7">
+      <h2 className="text-2xl font-bold tracking-[-0.03em] text-brand-deep">Send us a message</h2>
       <Input label="Your name" required value={name} onChange={(e) => setName(e.target.value)} error={errors.name} maxLength={80} autoComplete="name" />
       <Textarea
         label="Message"
@@ -38,7 +38,7 @@ export function ContactForm({ whatsappNumber, storeName }: { whatsappNumber: str
         maxLength={1000}
         placeholder="Ask about a product, delivery to your area, or an existing order…"
       />
-      <Button type="submit" variant="whatsapp" size="lg" className="w-full sm:w-auto" leftIcon={<FaWhatsapp className="size-5" aria-hidden="true" />}>
+      <Button type="submit" variant="whatsapp" size="lg" className="w-full rounded-full! sm:w-auto sm:px-8!" leftIcon={<FaWhatsapp className="size-5" aria-hidden="true" />}>
         Send on WhatsApp
       </Button>
       <p className="text-xs text-muted">WhatsApp opens with your message ready. It&apos;s only sent when you tap send.</p>

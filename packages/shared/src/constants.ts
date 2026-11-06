@@ -45,7 +45,7 @@ export const FULFILLMENT_METHODS = ["delivery", "pickup"] as const;
 export type FulfillmentMethod = (typeof FULFILLMENT_METHODS)[number];
 
 export const FULFILLMENT_LABELS: Record<FulfillmentMethod, string> = {
-  delivery: "Delivery",
+  delivery: "Delivery to your doorstep",
   pickup: "Pickup",
 };
 

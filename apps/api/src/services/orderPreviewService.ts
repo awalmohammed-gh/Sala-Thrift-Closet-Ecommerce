@@ -56,6 +56,7 @@ export async function getOrderPreview(token: string): Promise<OrderPreviewDTO> {
       attributes: item.attributes.map((attribute) => ({ name: attribute.name, value: attribute.value })),
       quantity: item.quantity, unitPrice: item.unitPrice, lineTotal: item.lineTotal,
     })),
+    deliveryFee: order.deliveryFee ?? null,
     total: order.total,
     createdAt: order.createdAt.toISOString(),
     expiresAt: order.previewExpiresAt.toISOString(),

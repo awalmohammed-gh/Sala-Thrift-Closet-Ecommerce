@@ -182,7 +182,7 @@ async function ProductContent({ params }: { params: PageProps<"/products/[slug]"
             href={product.category ? `/categories/${product.category.slug}` : "/shop"}
             linkLabel={product.category ? `More ${product.category.name}` : "View all"}
           />
-          <ProductGrid products={related} />
+          <ProductGrid products={related} columns="four" />
         </section>
       )}
     </>

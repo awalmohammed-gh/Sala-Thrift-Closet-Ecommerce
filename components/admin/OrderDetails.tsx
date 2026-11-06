@@ -134,6 +134,12 @@ export function OrderDetails({ order, storeName, onClose, onUpdated }: OrderDeta
                 <p className="shrink-0 text-sm font-semibold text-ink">{formatGHS(item.lineTotal)}</p>
               </li>
             ))}
+            {order.fulfillmentMethod === "delivery" && (
+              <li className="flex items-center justify-between p-3 text-sm">
+                <span className="text-muted">Delivery fee</span>
+                <span className="font-semibold text-ink">{order.deliveryFee === null ? "To be confirmed" : formatGHS(order.deliveryFee)}</span>
+              </li>
+            )}
             <li className="flex items-center justify-between p-3 text-base">
               <span className="font-semibold text-ink">Total</span>
               <span className="font-display font-bold text-ink">{formatGHS(order.total)}</span>

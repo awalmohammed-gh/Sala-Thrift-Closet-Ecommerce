@@ -173,6 +173,8 @@ export interface StoreSettingsDTO {
   whatsappGreeting: string;
   /** Pre-filled text for general "Chat with us" links. Empty uses a default per page. */
   whatsappSupportMessage: string;
+  /** Pesewas charged for doorstep delivery. Null means the fee is agreed on WhatsApp. */
+  deliveryFee: number | null;
   supportPhone: string;
   supportEmail: string;
   address: string;
@@ -306,6 +308,8 @@ export interface OrderDTO {
   items: OrderItemDTO[];
   itemCount: number;
   subtotal: number;
+  /** Doorstep delivery charge in pesewas, included in total. Null for pickup or a fee agreed on WhatsApp. */
+  deliveryFee: number | null;
   total: number;
   fulfillmentMethod: FulfillmentMethod;
   deliveryLocation: string;
@@ -326,6 +330,7 @@ export interface WhatsAppOrderResult {
     status: OrderStatus;
     items: OrderItemDTO[];
     subtotal: number;
+    deliveryFee: number | null;
     total: number;
     createdAt: string;
   };
@@ -340,6 +345,7 @@ export interface OrderPreviewDTO {
   storeName: string;
   orderReference: string;
   items: Pick<OrderItemDTO, "name" | "image" | "attributes" | "quantity" | "unitPrice" | "lineTotal">[];
+  deliveryFee: number | null;
   total: number;
   createdAt: string;
   expiresAt: string;
@@ -351,7 +357,7 @@ export interface GuestSessionDTO {
 }
 
 export type CustomerOrderDTO = Pick<OrderDTO,
-  "id" | "orderReference" | "customer" | "items" | "itemCount" | "subtotal" | "total" |
+  "id" | "orderReference" | "customer" | "items" | "itemCount" | "subtotal" | "deliveryFee" | "total" |
   "fulfillmentMethod" | "deliveryLocation" | "deliveryAddress" | "notes" | "status" | "createdAt" | "updatedAt"
 > & {
   checkoutHandoffStatus: "prepared" | "initiated";

@@ -13,7 +13,7 @@ const variants: Record<Variant, string> = {
   danger: "bg-danger text-white hover:bg-danger/90",
   whatsapp: "bg-whatsapp text-white hover:bg-[#0e7a40] shadow-sm",
   accent: "bg-accent text-brand-deep hover:bg-[#dd8d26] shadow-sm",
-  hero: "bg-accent text-white hover:bg-accent-700 shadow-sm [text-shadow:0_1px_2px_rgb(16_56_45_/_0.55)]",
+  hero: "bg-tag text-brand-deep hover:bg-white shadow-sm",
   link: "text-brand underline-offset-4 hover:underline px-0",
 };
 

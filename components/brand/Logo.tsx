@@ -22,10 +22,12 @@ interface LogoProps {
   className?: string;
   showTagline?: boolean;
   admin?: boolean;
+  /** Header size: a market gives the screen to its stock. */
+  compact?: boolean;
 }
 
 /** Use the supplied artwork by default; an admin-uploaded logo can override it on the storefront. */
-export function Logo({ storeName = "SALASTY THRIFT CLOSET", logo, tone = "light", className, showTagline = false, admin = false }: LogoProps) {
+export function Logo({ storeName = "SALASTY THRIFT CLOSET", logo, tone = "light", className, showTagline = false, admin = false, compact = false }: LogoProps) {
   const uploaded = admin ? null : logo;
   return (
     <span className={cn("inline-flex min-w-0 max-w-full shrink-0 flex-col", className)}>
@@ -35,7 +37,7 @@ export function Logo({ storeName = "SALASTY THRIFT CLOSET", logo, tone = "light"
         width={uploaded?.width ?? (admin ? 512 : 1254)}
         height={uploaded?.height ?? (admin ? 512 : 1254)}
         sizes="(min-width: 640px) 96px, 72px"
-        className="h-16 w-auto max-w-44 rounded-xl object-contain sm:h-20"
+        className={cn("w-auto max-w-44 rounded-xl object-contain", compact ? "h-11 sm:h-12" : "h-16 sm:h-20")}
         priority
       />
       {showTagline && <span className={cn("mt-2 text-[10px] font-semibold uppercase tracking-[0.12em]", tone === "dark" ? "text-white/70" : "text-muted")}>

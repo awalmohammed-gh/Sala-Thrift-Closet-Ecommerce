@@ -1,80 +1,47 @@
-import { FiArrowRight, FiPackage } from "react-icons/fi";
+import { FiPackage } from "react-icons/fi";
 import { StaggerContainer } from "@/components/animations/StaggerContainer";
 import { ProductGrid, ProductGridSkeleton } from "@/components/products/ProductGrid";
-import { ButtonLink } from "@/components/ui/Button";
-import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getProducts, getSettings, type ProductQuery } from "@/lib/catalog";
 import { SectionHeading } from "./SectionHeading";
 
 interface ProductSectionProps {
   id: string;
-  eyebrow: string;
   title: string;
-  description?: string;
   href: string;
+  linkLabel?: string;
   query: ProductQuery;
   /** Hide the section entirely when nothing matches (e.g. no featured items yet). */
   hideWhenEmpty?: boolean;
-  tone?: "plain" | "tinted";
-  /** Images to load eagerly (the grid is above the fold). */
+  /** Images to load straight away because they are on screen when the page opens. */
   priorityCount?: number;
-  /** Adds a full-width "see more" button under the grid. */
-  moreLabel?: string;
-  /** First section on the page: its cards rise in after the banner instead of on scroll. */
-  intro?: boolean;
 }
 
-async function ProductSection({ id, eyebrow, title, description, href, query, hideWhenEmpty = false, tone = "plain", priorityCount, moreLabel, intro = false }: ProductSectionProps) {
+async function ProductSection({ id, title, href, linkLabel, query, hideWhenEmpty = false, priorityCount }: ProductSectionProps) {
   const result = await getProducts(query);
   if (result && result.items.length === 0 && hideWhenEmpty) return null;
 
   return (
-    <section className={tone === "tinted" ? "border-y border-blue-100/60 bg-blue-50/50 py-8 sm:py-12" : "py-8 sm:py-12"} aria-labelledby={id}>
-      <div className="container-page">
-        <SectionHeading id={id} eyebrow={eyebrow} title={title} description={description} href={result?.items.length ? href : undefined} />
-        {result === null ? (
-          <p className="rounded-2xl border border-line bg-white p-6 text-sm text-muted">Products couldn&apos;t be loaded right now. Please refresh in a moment.</p>
-        ) : (
-          <StaggerContainer items=":scope > ul > li">
-            <ProductGrid
-              products={result.items}
-              priorityCount={priorityCount}
-              className={cn("gap-y-4 sm:gap-y-5 xl:grid-cols-4", intro && "stagger-in")}
-              empty={
-                <EmptyState
-                  icon={<FiPackage />}
-                  title="New stock is on the way"
-                  description="We're adding products to the store. In the meantime, message us on WhatsApp and we'll help you find what you need."
-                />
-              }
-            />
-          </StaggerContainer>
-        )}
-        {moreLabel && !!result?.items.length && (
-          <div className="mt-6 flex justify-center sm:mt-8">
-            <ButtonLink href={href} size="lg" className="w-full rounded-full! sm:w-auto sm:px-10!" rightIcon={<FiArrowRight className="size-4" aria-hidden="true" />}>{moreLabel}</ButtonLink>
-          </div>
-        )}
-      </div>
+    <section className="container-page pt-8 sm:pt-10" aria-labelledby={id}>
+      <SectionHeading id={id} title={title} href={result?.items.length ? href : undefined} linkLabel={linkLabel} />
+      {result === null ? (
+        <p className="rounded-2xl border border-line bg-white p-6 text-sm text-muted">Products couldn&apos;t be loaded right now. Please refresh in a moment.</p>
+      ) : (
+        <StaggerContainer items=":scope > ul > li">
+          <ProductGrid
+            products={result.items}
+            priorityCount={priorityCount}
+            empty={
+              <EmptyState
+                icon={<FiPackage />}
+                title="New stock is on the way"
+                description="We're adding products to the store. In the meantime, message us on WhatsApp and we'll help you find what you need."
+              />
+            }
+          />
+        </StaggerContainer>
+      )}
     </section>
-  );
-}
-
-/** Hidden when switched off in Admin → Settings → Storefront. */
-export async function FeaturedProducts() {
-  const { storefront } = await getSettings();
-  if (!storefront.showFeaturedProducts) return null;
-  return (
-    <ProductSection
-      id="featured-heading"
-      eyebrow="Closet favourites"
-      title="Top picks"
-      href="/shop"
-      query={{ featured: true, limit: 8 }}
-      hideWhenEmpty
-      tone="tinted"
-    />
   );
 }
 
@@ -82,14 +49,21 @@ export async function FeaturedProducts() {
 export async function NewArrivals() {
   const { storefront } = await getSettings();
   if (!storefront.showNewArrivals) return null;
-  return <ProductSection id="new-heading" eyebrow="Just in" title="Fresh in the closet" href="/shop?sort=newest" query={{ sort: "newest", limit: 12 }} priorityCount={4} moreLabel="See all items" intro />;
+  return <ProductSection id="new-heading" title="Just In" href="/shop?sort=newest" linkLabel="View all products" query={{ sort: "newest", limit: 12 }} priorityCount={6} />;
+}
+
+/** Hidden when switched off in Admin → Settings → Storefront, or when nothing is featured. */
+export async function FeaturedProducts() {
+  const { storefront } = await getSettings();
+  if (!storefront.showFeaturedProducts) return null;
+  return <ProductSection id="featured-heading" title="Top picks" href="/shop" query={{ featured: true, limit: 6 }} hideWhenEmpty />;
 }
 
 export function SectionSkeleton() {
   return (
-    <div className="container-page py-7 sm:py-10" aria-hidden="true">
-      <div className="skeleton mb-8 h-8 w-56" />
-      <ProductGridSkeleton count={4} />
+    <div className="container-page pt-8 sm:pt-10" aria-hidden="true">
+      <div className="skeleton mb-4 h-7 w-40" />
+      <ProductGridSkeleton count={6} />
     </div>
   );
 }

@@ -20,9 +20,11 @@ interface AddToCartButtonProps {
   label?: string;
   /** Round icon-only "quick add" for product cards; confirms with a toast instead of inline text. */
   compact?: boolean;
+  /** Takes the shopper straight to the cart after adding. */
+  buyNow?: boolean;
 }
 
-export function AddToCartButton({ line, quantity = 1, disabled, className, size = "sm", label = "Add to cart", compact = false }: AddToCartButtonProps) {
+export function AddToCartButton({ line, quantity = 1, disabled, className, size = "sm", label = "Add to cart", compact = false, buyNow = false }: AddToCartButtonProps) {
   const router = useRouter();
   const { addItem, lines, hydrated, pending } = useCart();
   const [added, setAdded] = useState(false);
@@ -39,6 +41,10 @@ export function AddToCartButton({ line, quantity = 1, disabled, className, size 
     setAdding(true);
     try {
       await addItem(line, quantity);
+      if (buyNow) {
+        router.push("/cart");
+        return;
+      }
       setAdded(true);
       window.clearTimeout(timer.current);
       timer.current = window.setTimeout(() => setAdded(false), 1800);
@@ -76,6 +82,11 @@ export function AddToCartButton({ line, quantity = 1, disabled, className, size 
         )}
       </button>
     );
+  }
+
+  // A one-of-a-kind item already in the cart: the useful next step is the cart itself.
+  if (buyNow && atLimit && !disabled) {
+    return <Button size={size} onClick={() => router.push("/cart")} className={cn("w-full", className)} leftIcon={<FiShoppingBag className="size-4" aria-hidden="true" />}>View Cart</Button>;
   }
 
   return (

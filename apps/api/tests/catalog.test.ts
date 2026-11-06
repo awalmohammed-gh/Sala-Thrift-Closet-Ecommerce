@@ -60,6 +60,24 @@ describe("products", () => {
     expect(categories.body.data.find((item: { id: string }) => item.id === category.id).productCount).toBe(0);
   });
 
+  it("filters by the prices a shopper can actually pay", async () => {
+    const category = await createCategory();
+    const option = (value: string, price: number | null, isActive = true) => ({ attributes: [{ name: "Size", value }], price, stock: 2, isActive });
+    const options = [{ name: "Size", values: ["M", "L"] }];
+    await admin.post("/api/admin/products", { name: "Plain Soap", category: category.id, price: 4000, stock: 5 }).expect(201);
+    await admin.post("/api/admin/products", { name: "Dear Soap", category: category.id, price: 9000, stock: 5 }).expect(201);
+    await admin.post("/api/admin/products", { name: "Overridden", category: category.id, price: 4000, options, variants: [option("M", 7000), option("L", 7000)] }).expect(201);
+    await admin.post("/api/admin/products", { name: "Cheaper Option", category: category.id, price: 9000, options, variants: [option("M", 4500), option("L", 9000)] }).expect(201);
+    await admin.post("/api/admin/products", { name: "Inherited Price", category: category.id, price: 4500, options, variants: [option("M", null), option("L", 9000)] }).expect(201);
+    await admin.post("/api/admin/products", { name: "Hidden Option", category: category.id, price: 9000, options, variants: [option("M", 4500, false), option("L", 9000)] }).expect(201);
+
+    const names = async (query: Record<string, number | string>) => (await request(app).get("/api/products").query({ sort: "name-asc", ...query }).expect(200)).body.data.items.map((item: { name: string }) => item.name);
+    expect(await names({ maxPrice: 5000 })).toEqual(["Cheaper Option", "Inherited Price", "Plain Soap"]);
+    expect(await names({ minPrice: 6000, maxPrice: 8000 })).toEqual(["Overridden"]);
+    expect(await names({ minPrice: 8000 })).toEqual(["Cheaper Option", "Dear Soap", "Hidden Option", "Inherited Price"]);
+    await request(app).get("/api/products").query({ maxPrice: -1 }).expect(400);
+  });
+
   it("requires an authenticated admin and CSRF token for permanent deletion", async () => {
     const category = await createCategory();
     const product = (await admin.post("/api/admin/products", { name: "Protected Soap", category: category.id, price: 1200 }).expect(201)).body.data;

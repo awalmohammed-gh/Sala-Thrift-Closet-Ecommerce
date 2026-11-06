@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense, type ReactNode } from "react";
+import { SmoothScroll } from "@/components/animations/SmoothScroll";
 import { Footer } from "@/components/layout/Footer";
 import { MobileFloatingNav } from "@/components/layout/MobileFloatingNav";
 import { PwaInstallPrompt } from "@/components/layout/PwaInstallPrompt";
@@ -18,6 +19,7 @@ export default function StoreLayout({ children }: { children: ReactNode }) {
   return (
     <CartProvider>
       <NotificationsProvider>
+        <SmoothScroll />
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-lg focus:bg-brand focus:px-4 focus:py-2 focus:text-white"

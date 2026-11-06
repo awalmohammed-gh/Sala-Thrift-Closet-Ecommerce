@@ -13,6 +13,8 @@ import {
   normalizePhoneNumber,
   settingsInputSchema,
   type ImageAsset,
+  parseCedisToPesewas,
+  pesewasToInput,
   type PushSubscriberStats,
   type SocialLinks,
   type StoreSettingsDTO,
@@ -44,7 +46,7 @@ const SECTIONS: { id: SectionId; label: string; description: string; icon: IconT
 /** Which section a validation error belongs to, so the page can jump to it. */
 function sectionFor(field: string): SectionId {
   if (field.startsWith("logo") || field.startsWith("favicon")) return "branding";
-  if (field.startsWith("whatsapp")) return "whatsapp";
+  if (field.startsWith("whatsapp") || field === "deliveryFee") return "whatsapp";
   if (field.startsWith("notifications")) return "notifications";
   if (field.startsWith("storefront") || field === "announcement") return "storefront";
   return "general";
@@ -120,6 +122,7 @@ function SettingsForm({ initial, onSaved }: { initial: StoreSettingsDTO; onSaved
   const [form, setForm] = useState(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [deliveryFeeText, setDeliveryFeeText] = useState(pesewasToInput(initial.deliveryFee));
   const stats = useAdminResource<PushSubscriberStats>(section === "notifications" ? "/admin/notifications/subscribers" : null);
 
   const dirty = useMemo(() => JSON.stringify(form) !== JSON.stringify(saved), [form, saved]);
@@ -291,6 +294,24 @@ function SettingsForm({ initial, onSaved }: { initial: StoreSettingsDTO; onSaved
                   />
                   <Input label="Order message greeting" value={form.whatsappGreeting} onChange={(e) => set("whatsappGreeting", e.target.value)} error={errors.whatsappGreeting} maxLength={120} placeholder={`Hello ${form.storeName || "SALASTY THRIFT CLOSET"},`} hint="First line of every order message. Leave blank for the default." />
                   <MessagePreview lines={[greetingLine, "", "I would like to place an order.", "", "Order Reference: SAL-000123", "…"]} />
+                </div>
+              </Panel>
+              <Panel title="Delivery">
+                <div className="space-y-4 p-4 sm:p-5">
+                  <Input
+                    label="Doorstep delivery fee (GHS)"
+                    inputMode="decimal"
+                    value={deliveryFeeText}
+                    onChange={(e) => {
+                      setDeliveryFeeText(e.target.value);
+                      const text = e.target.value.trim();
+                      set("deliveryFee", text ? parseCedisToPesewas(text) : null);
+                    }}
+                    error={errors.deliveryFee || (deliveryFeeText.trim() && form.deliveryFee === null ? "Enter an amount like 25 or 25.50" : undefined)}
+                    placeholder="e.g. 25.00"
+                    hint="Added to the order when a customer chooses delivery to their doorstep. Pickup is never charged. Leave empty to agree the fee on WhatsApp, or enter 0 for free delivery."
+                    wrapperClassName="max-w-xs"
+                  />
                 </div>
               </Panel>
               <Panel title="Customer support">

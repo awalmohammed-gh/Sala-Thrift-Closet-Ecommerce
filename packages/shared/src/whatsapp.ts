@@ -15,6 +15,10 @@ export interface WhatsAppOrderMessageInput {
     lineTotal: number;
     image?: string | null;
   }[];
+  /** Items only, before delivery. */
+  subtotal?: number;
+  /** Null when the delivery fee is agreed on WhatsApp. */
+  deliveryFee?: number | null;
   total: number;
   customer: { name: string; phone: string };
   fulfillmentMethod: FulfillmentMethod;
@@ -52,6 +56,10 @@ export function buildOrderMessage(input: WhatsAppOrderMessageInput): string {
     lines.push("");
   });
 
+  if (input.fulfillmentMethod === "delivery" && input.subtotal !== undefined) {
+    lines.push(`Items Subtotal: ${formatGHS(input.subtotal)}`);
+    lines.push(`Delivery Fee: ${input.deliveryFee === null || input.deliveryFee === undefined ? "To be confirmed" : formatGHS(input.deliveryFee)}`);
+  }
   lines.push(`Total: ${formatGHS(input.total)}`, "");
   lines.push(`Customer Name: ${cleanText(input.customer.name)}`);
   lines.push(`Phone: ${formatPhoneDisplay(input.customer.phone)}`);

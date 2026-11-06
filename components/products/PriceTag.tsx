@@ -6,7 +6,7 @@ interface PriceTagProps {
   compareAtPrice?: number | null;
   /** When a product's variants have different prices. */
   maxPrice?: number;
-  size?: "sm" | "lg";
+  size?: "card" | "sm" | "lg";
   className?: string;
 }
 
@@ -15,13 +15,13 @@ export function PriceTag({ price, compareAtPrice, maxPrice, size = "sm", classNa
   const isRange = maxPrice !== undefined && maxPrice > price;
   return (
     <div className={cn("flex flex-wrap items-baseline gap-x-2 gap-y-0.5", className)}>
-      <span className={cn("font-display font-bold text-ink", size === "lg" ? "text-3xl" : "text-base sm:text-lg")}>
+      <span className={cn("font-display font-bold text-ink", size === "lg" ? "text-3xl" : size === "card" ? "text-[15px]" : "text-base sm:text-lg")}>
         {isRange && <span className="mr-1 text-xs font-medium text-muted">From</span>}
         {formatGHS(price)}
       </span>
       {discount && compareAtPrice && (
         <>
-          <span className={cn("text-muted line-through", size === "lg" ? "text-lg" : "text-xs sm:text-sm")}>
+          <span className={cn("text-muted line-through", size === "lg" ? "text-lg" : size === "card" ? "text-xs" : "text-xs sm:text-sm")}>
             <span className="sr-only">Was </span>
             {formatGHS(compareAtPrice)}
           </span>

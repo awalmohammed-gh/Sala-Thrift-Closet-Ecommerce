@@ -22,6 +22,11 @@
   --color-success: #157347;
   --color-success-50: #ecf8f1;
   --color-whatsapp: #128c4b;
+  /* Market price-sticker gold, drawn from the logo. Text on it is always brand-deep. */
+  --color-tag: #ffc53d;
+  --color-tag-soft: #fff4d1;
+  /* Darkest brand blue: top bar, hero and footer. */
+  --color-navy: #0a1b4a;
 
   --radius-card: 1rem;
   --shadow-card: 0 1px 2px rgb(30 64 175 / 0.04), 0 8px 24px -12px rgb(30 64 175 / 0.12);
@@ -33,18 +38,6 @@
   --animate-toast-out: toast-out 180ms ease-in forwards;
   /* Hero copy entrance: CSS only, so it plays before (and without) JavaScript. */
   --animate-hero-rise: hero-rise 600ms var(--ease-out-soft) both;
-  --animate-hero-word: hero-word 700ms var(--ease-out-soft) both;
-
-  @keyframes hero-word {
-    from {
-      opacity: 0;
-      translate: 0 14px;
-    }
-    to {
-      opacity: 1;
-      translate: 0 0;
-    }
-  }
 
   /* Shared easing for storefront motion (matches EASE_OUT in components/animations/tokens.ts). */
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
@@ -53,69 +46,6 @@
     from {
       opacity: 0;
       translate: 0 18px;
-    }
-    to {
-      opacity: 1;
-      translate: 0 0;
-    }
-  }
-
-  /* Home banner photos: pop in, then drift. Each property is animated on its own
-     element (frame, float wrapper, image) so the effects never fight each other.
-     `backwards` hands scale back to the stylesheet afterwards, so hover still works. */
-  --animate-hero-photo: hero-photo 900ms var(--ease-out-soft) backwards;
-  --animate-hero-float: hero-float 5s ease-in-out infinite alternate;
-  --animate-hero-zoom: hero-zoom 14s ease-in-out infinite alternate;
-  --animate-hero-pulse: hero-pulse 6s ease-in-out infinite;
-  --animate-chip-in: chip-in 500ms var(--ease-out-soft) backwards;
-
-  @keyframes hero-photo {
-    from {
-      opacity: 0;
-      scale: 0.86;
-      translate: 0 28px;
-    }
-    to {
-      opacity: 1;
-      scale: 1;
-      translate: 0 0;
-    }
-  }
-
-  @keyframes hero-float {
-    from {
-      translate: 0 0;
-    }
-    to {
-      translate: 0 -8px;
-    }
-  }
-
-  @keyframes hero-zoom {
-    from {
-      scale: 1;
-    }
-    to {
-      scale: 1.08;
-    }
-  }
-
-  @keyframes hero-pulse {
-    0%,
-    100% {
-      scale: 1;
-      opacity: 0.55;
-    }
-    50% {
-      scale: 1.07;
-      opacity: 1;
-    }
-  }
-
-  @keyframes chip-in {
-    from {
-      opacity: 0;
-      translate: 16px 0;
     }
     to {
       opacity: 1;
@@ -168,6 +98,11 @@
     scroll-behavior: smooth;
     overscroll-behavior: none;
     scrollbar-gutter: stable;
+  }
+
+  /* Lenis eases the wheel itself; the browser's smooth scrolling would fight it. */
+  html.lenis.lenis-smooth {
+    scroll-behavior: auto;
   }
 
   body {
@@ -232,6 +167,40 @@
     .container-page {
       padding-inline: 2rem;
     }
+  }
+
+  /* Two range inputs share one track, so only their thumbs take pointer events. */
+  .price-range input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    margin: 0;
+    appearance: none;
+    background: transparent;
+    pointer-events: none;
+  }
+
+  .price-range input::-webkit-slider-thumb {
+    appearance: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    border: 3px solid var(--color-brand);
+    border-radius: 9999px;
+    background: var(--color-brand);
+    box-shadow: 0 0 0 2px white;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+
+  .price-range input::-moz-range-thumb {
+    width: 0.75rem;
+    height: 0.75rem;
+    border: 3px solid var(--color-brand);
+    border-radius: 9999px;
+    background: var(--color-brand);
+    box-shadow: 0 0 0 2px white;
+    cursor: pointer;
+    pointer-events: auto;
   }
 
   .skeleton {
@@ -331,21 +300,20 @@
 }
 
 /*
- * Above-the-fold product cards rise in one after another after the banner.
- * Cards further down are left to the scroll reveal (StaggerContainer).
+ * Items on screen when a page opens rise in one after another. CSS, so it plays before (and
+ * without) JavaScript. Later items are left to the scroll reveal.
  */
 @utility stagger-in {
   & > * {
-    animation: hero-rise 600ms var(--ease-out-soft) backwards;
-    animation-delay: 450ms;
+    animation: hero-rise 500ms var(--ease-out-soft) backwards;
   }
-  & > :nth-child(2) { animation-delay: 520ms; }
-  & > :nth-child(3) { animation-delay: 590ms; }
-  & > :nth-child(4) { animation-delay: 660ms; }
-  & > :nth-child(5) { animation-delay: 730ms; }
-  & > :nth-child(6) { animation-delay: 800ms; }
-  & > :nth-child(7) { animation-delay: 870ms; }
-  & > :nth-child(8) { animation-delay: 940ms; }
+  & > :nth-child(2) { animation-delay: 50ms; }
+  & > :nth-child(3) { animation-delay: 100ms; }
+  & > :nth-child(4) { animation-delay: 150ms; }
+  & > :nth-child(5) { animation-delay: 200ms; }
+  & > :nth-child(6) { animation-delay: 250ms; }
+  & > :nth-child(7) { animation-delay: 300ms; }
+  & > :nth-child(8) { animation-delay: 350ms; }
   & > :nth-child(n + 9) { animation: none; }
 }
 

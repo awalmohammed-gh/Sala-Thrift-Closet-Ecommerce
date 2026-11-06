@@ -202,7 +202,7 @@ export function ProductDetails({ product, whatsappEnabled, whatsappNotice }: { p
           {inCart > 0 && <p className="text-xs text-muted">{inCart} already in your cart.</p>}
 
           <div className="grid gap-2 sm:grid-cols-2">
-            <AddToCartButton line={line} quantity={safeQuantity} disabled={!canBuy} size="lg" label={stock <= 0 && (!hasVariants || selectedVariant) ? "Out of stock" : "Add to cart"} />
+            <AddToCartButton line={line} quantity={safeQuantity} disabled={!canBuy} size="lg" label={stock <= 0 && (!hasVariants || selectedVariant) ? "Out of stock" : "Buy Now"} buyNow />
             <Button
               variant="whatsapp"
               size="lg"

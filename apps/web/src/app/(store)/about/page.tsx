@@ -2,12 +2,15 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { FaWhatsapp } from "react-icons/fa";
 import { FiArrowRight } from "react-icons/fi";
+import { RevealOnScroll } from "@/components/animations/RevealOnScroll";
+import { StaggerContainer } from "@/components/animations/StaggerContainer";
 import { Benefits } from "@/components/home/Benefits";
-import { ButtonLink } from "@/components/ui/Button";
+import { PageHero } from "@/components/layout/PageHero";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { siteConfig } from "@/config/site";
 import { getMetadataSettings, getSettings } from "@/lib/catalog";
 import { supportChatUrl } from "@/lib/whatsapp";
+import Link from "next/link";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { storeName } = await getMetadataSettings();
@@ -19,8 +22,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const STEPS = [
-  { title: "Browse and add to cart", text: "Pick your favourite clothing. Choose your size and colour where available." },
-  { title: "Add your details", text: "Tell us your name, phone number and whether you'd like delivery or pickup." },
+  { title: "Browse and pick", text: "Find what you love and choose your size and colour where available." },
+  { title: "Add your details", text: "Tell us your name, your WhatsApp number, and whether you'd like pickup or delivery." },
   { title: "Send on WhatsApp", text: "WhatsApp opens with your full order written out, including an order reference. Tap send." },
   { title: "We confirm with you", text: "Our team replies to confirm availability, delivery or pickup, and how you'd like to pay." },
 ];
@@ -28,7 +31,7 @@ const STEPS = [
 async function AboutIntro() {
   const settings = await getSettings();
   return (
-    <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted">
+    <p className="mt-3 max-w-[62%] text-sm leading-relaxed text-blue-50 sm:max-w-md sm:text-lg lg:max-w-xl">
       {settings.storeDescription ||
         `${settings.storeName} brings thrift clothing together in one friendly closet, from everyday tees and shirts to jeans, hoodies and jackets.`}
     </p>
@@ -39,14 +42,14 @@ async function AboutCta() {
   const settings = await getSettings();
   const chatUrl = supportChatUrl(settings, `Hello ${settings.storeName}!`);
   return (
-    <div className="flex flex-col gap-3 sm:flex-row">
-      <ButtonLink href="/shop" size="lg" rightIcon={<FiArrowRight className="size-5" aria-hidden="true" />}>
-        Start shopping
-      </ButtonLink>
+    <div className="flex flex-wrap gap-3">
+      <Link href="/shop" className="group inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-deep px-6 text-sm font-bold text-white transition-colors hover:bg-brand">
+        Start shopping<FiArrowRight className="size-4 transition-transform duration-200 ease-out-soft group-hover:translate-x-1" aria-hidden="true" />
+      </Link>
       {chatUrl && (
-        <ButtonLink href={chatUrl} external size="lg" variant="secondary" leftIcon={<FaWhatsapp className="size-5 text-whatsapp" aria-hidden="true" />}>
-          Say hello on WhatsApp
-        </ButtonLink>
+        <a href={chatUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-2 rounded-full bg-white px-6 text-sm font-bold text-brand-deep transition-colors hover:bg-brand-50">
+          <FaWhatsapp className="size-5 text-whatsapp" aria-hidden="true" />Say hello on WhatsApp
+        </a>
       )}
     </div>
   );
@@ -66,38 +69,46 @@ export default function AboutPage() {
   return (
     <>
       <JsonLd data={breadcrumbSchema} />
-      <section className="container-page py-12 sm:py-16">
-        <p className="mb-1.5 text-xs font-bold uppercase tracking-[0.16em] text-accent-700">About us</p>
-        <h1 className="max-w-3xl text-4xl font-bold leading-tight text-ink sm:text-5xl">Thrift style, with a personal touch.</h1>
-        <Suspense fallback={<div className="skeleton mt-4 h-16 max-w-2xl" />}>
+      <PageHero eyebrow="About Us" title="Thrift style, with a personal touch." image="/images/editorial/shop-rack.webp" imagePosition="60% 50%">
+        <Suspense fallback={<div className="mt-3 h-14 w-full max-w-xl rounded-lg bg-white/10" />}>
           <AboutIntro />
         </Suspense>
-      </section>
-
-      <section id="how-it-works" className="scroll-mt-24 border-y border-line bg-white py-14 sm:py-16" aria-labelledby="how-heading">
-        <div className="container-page">
-          <h2 id="how-heading" className="text-2xl font-bold text-ink sm:text-3xl">
-            How ordering works
-          </h2>
-          <p className="mt-2 max-w-2xl text-muted">No account, no card details and no app downloads. Just the WhatsApp you already use.</p>
-          <ol className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {STEPS.map((step, index) => (
-              <li key={step.title} className="rounded-2xl border border-line bg-cream p-5">
-                <span className="flex size-10 items-center justify-center rounded-xl bg-brand font-display text-lg font-bold text-cream">{index + 1}</span>
-                <h3 className="mt-4 font-display text-lg font-semibold text-ink">{step.title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-muted">{step.text}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
+      </PageHero>
 
       <Benefits />
 
-      <section className="container-page py-14">
-        <Suspense fallback={null}>
-          <AboutCta />
-        </Suspense>
+      <section id="how-it-works" className="scroll-mt-24 bg-slate-50 py-10 sm:py-14" aria-labelledby="how-heading">
+        <div className="container-page">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand">Simple from start to finish</p>
+          <h2 id="how-heading" className="mt-1.5 text-3xl font-bold tracking-[-0.03em] text-brand-deep sm:text-4xl">How ordering works</h2>
+          <p className="mt-2 max-w-2xl text-muted">No account, no card details and no app downloads. Just the WhatsApp you already use.</p>
+          <StaggerContainer items=":scope > ol > li" stagger={0.1}>
+          <ol className="relative mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
+            <span aria-hidden="true" className="absolute inset-x-[12%] top-5 hidden h-0.5 bg-brand-100 lg:block" />
+            {STEPS.map((step, index) => (
+              <li key={step.title} className="relative flex gap-4 lg:block">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-tag font-display font-bold text-brand-deep ring-4 ring-slate-50">{index + 1}</span>
+                <div className="lg:mt-4">
+                  <h3 className="text-lg font-bold text-brand-deep">{step.title}</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-muted">{step.text}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          </StaggerContainer>
+        </div>
+      </section>
+
+      <section className="container-page pt-10 sm:pt-14">
+        <RevealOnScroll className="flex flex-col gap-5 rounded-3xl bg-tag p-6 sm:p-10 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-[-0.03em] text-brand-deep sm:text-3xl">Ready to find something good?</h2>
+            <p className="mt-1 text-brand-deep">Fresh pieces land every week.</p>
+          </div>
+          <Suspense fallback={null}>
+            <AboutCta />
+          </Suspense>
+        </RevealOnScroll>
       </section>
     </>
   );

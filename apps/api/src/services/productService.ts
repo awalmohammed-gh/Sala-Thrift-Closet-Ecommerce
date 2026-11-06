@@ -46,6 +46,18 @@ function searchFilter(q: string): QueryFilter<ProductDoc> {
   return { $or: [{ name: pattern }, { description: pattern }, { subCategory: pattern }, { "variants.sku": pattern }] };
 }
 
+/** Matches the prices a shopper can pay: a variant's price override replaces the product price. */
+function priceRangeFilter(min?: number, max?: number): QueryFilter<ProductDoc> {
+  const range = { ...(min !== undefined ? { $gte: min } : {}), ...(max !== undefined ? { $lte: max } : {}) };
+  return {
+    $or: [
+      { price: range, variants: { $not: { $elemMatch: { isActive: true } } } },
+      { price: range, variants: { $elemMatch: { isActive: true, price: null } } },
+      { variants: { $elemMatch: { isActive: true, price: range } } },
+    ],
+  };
+}
+
 /* ------------------------------------------------------------------ Public */
 
 /** Products customers may see: active, not archived, in an active category. */
@@ -67,6 +79,7 @@ export async function listPublicProducts(query: PublicProductQuery): Promise<Pag
   if (query.onSale) {
     and.push({ $or: [{ compareAtPrice: { $gt: 0 } }, { variants: { $elemMatch: { isActive: true, compareAtPrice: { $gt: 0 } } } }] });
   }
+  if (query.minPrice !== undefined || query.maxPrice !== undefined) and.push(priceRangeFilter(query.minPrice, query.maxPrice));
   if (query.exclude) filter._id = { $ne: new Types.ObjectId(query.exclude) };
   if (and.length) filter.$and = and;
 

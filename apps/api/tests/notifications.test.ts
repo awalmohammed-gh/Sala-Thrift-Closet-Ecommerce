@@ -49,7 +49,7 @@ async function checkout(guest: Guest, status: number) {
   await guest.put("/api/cart", { items }).expect(200);
   return guest.post("/api/orders/whatsapp", {
     idempotencyKey: randomUUID(),
-    customer: { name: "Ama Mensah", phone: "0241234567", fulfillmentMethod: "pickup" },
+    customer: { name: "Ama Mensah", phone: "0241234567", whatsappConfirmed: true, fulfillmentMethod: "pickup" },
     items,
   }).expect(status);
 }
@@ -166,7 +166,7 @@ describe("admin order alerts", () => {
     const guest = await guestVisitor(app);
     const items = [{ productId, quantity: 1 }];
     await guest.put("/api/cart", { items }).expect(200);
-    const body = { idempotencyKey: randomUUID(), customer: { name: "Ama Mensah", phone: "0241234567", fulfillmentMethod: "pickup" }, items };
+    const body = { idempotencyKey: randomUUID(), customer: { name: "Ama Mensah", phone: "0241234567", whatsappConfirmed: true, fulfillmentMethod: "pickup" }, items };
     const first = await guest.post("/api/orders/whatsapp", body).expect(201);
     await guest.post("/api/orders/whatsapp", body).expect(200); // replay
 

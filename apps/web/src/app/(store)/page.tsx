@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Categories, CategoriesSkeleton } from "@/components/home/Categories";
 import { FeaturedProducts, NewArrivals, SectionSkeleton } from "@/components/home/FeaturedProducts";
-import { Banners, Hero } from "@/components/home/Hero";
-import { Promotions } from "@/components/home/Promotions";
+import { MarketHero, MarketHeroSkeleton } from "@/components/home/Hero";
+import { HomeSearch } from "@/components/home/HomeSearch";
+import { PromoBanners } from "@/components/home/PromoBanners";
 import { WhatsAppCta } from "@/components/home/WhatsAppCta";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { siteConfig } from "@/config/site";
@@ -13,7 +14,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-export default async function HomePage() {
+/** Reads settings behind its own Suspense boundary, so the page shell never waits for them. */
+async function StoreSchema() {
   const settings = await getSettings();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || siteConfig.url;
   const storeName = settings.storeName || siteConfig.name;
@@ -60,12 +62,21 @@ export default async function HomePage() {
     },
   };
 
+  return <JsonLd data={[localBusinessSchema, webSiteSchema]} />;
+}
+
+export default function HomePage() {
   return (
     <>
-      <JsonLd data={[localBusinessSchema, webSiteSchema]} />
+      <Suspense fallback={null}>
+        <StoreSchema />
+      </Suspense>
 
-      {/* A market, not a brochure: a short banner, the aisles, then the products. */}
-      <Hero />
+      {/* A market, not a brochure: the banner, the categories, then the products. */}
+      <HomeSearch />
+      <Suspense fallback={<MarketHeroSkeleton />}>
+        <MarketHero />
+      </Suspense>
       <Suspense fallback={<CategoriesSkeleton />}>
         <Categories />
       </Suspense>
@@ -73,12 +84,9 @@ export default async function HomePage() {
         <NewArrivals />
       </Suspense>
       <Suspense fallback={null}>
-        <Banners />
+        <PromoBanners />
       </Suspense>
       <Suspense fallback={null}>
-        <Promotions />
-      </Suspense>
-      <Suspense fallback={<SectionSkeleton />}>
         <FeaturedProducts />
       </Suspense>
       <Suspense fallback={null}>

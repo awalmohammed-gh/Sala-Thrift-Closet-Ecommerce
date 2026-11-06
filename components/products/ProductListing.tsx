@@ -104,7 +104,7 @@ export async function ProductListing({ searchParams, category }: ProductListingP
         <>
           <ProductGrid
             products={result.items}
-            priorityCount={4}
+            priorityCount={6}
             empty={
               <EmptyState
                 icon={<FiSearch />}

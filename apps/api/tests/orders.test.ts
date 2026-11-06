@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
+import { Order } from "../src/models/Order.js";
 import { Product } from "../src/models/Product.js";
 import { ORIGIN, createTestAdmin, guestVisitor, loginAdmin, resetDatabase, startDatabase, stopDatabase, type AdminAgent } from "./helpers.js";
 
@@ -14,6 +15,7 @@ let shirt: { id: string; variants: { id: string; attributes: { name: string; val
 const customer = {
   name: "Ama Mensah",
   phone: "024 123 4567",
+  whatsappConfirmed: true,
   fulfillmentMethod: "delivery",
   deliveryLocation: "East Legon, Accra",
   notes: "Call on arrival",
@@ -94,6 +96,39 @@ describe("WhatsApp checkout", () => {
 
     // Opening WhatsApp is not a sale: stock is untouched.
     expect(await stockOf(gel.id)).toBe(5);
+  });
+
+  it("adds the store's delivery fee to doorstep orders and never to pickup", async () => {
+    await admin.put("/api/admin/settings", { storeName: "SALASTY THRIFT CLOSET", whatsappNumber: "233201234567", deliveryFee: 2500 }).expect(200);
+    const items = [{ productId: gel.id, quantity: 1 }];
+
+    const delivered = (await placeOrder(items).expect(201)).body.data;
+    expect(delivered.order).toMatchObject({ subtotal: 4500, deliveryFee: 2500, total: 7000 });
+    expect(delivered.message).toContain("Delivery Fee: GHS 25.00");
+    expect(delivered.message).toContain("Total: GHS 70.00");
+
+    const pickup = (await placeOrder(items, { customer: { ...customer, fulfillmentMethod: "pickup" } }).expect(201)).body.data;
+    expect(pickup.order).toMatchObject({ subtotal: 4500, deliveryFee: null, total: 4500 });
+    expect(pickup.message).not.toContain("Delivery Fee");
+  });
+
+  it("refuses a total that leaves out the delivery fee", async () => {
+    await admin.put("/api/admin/settings", { storeName: "SALASTY THRIFT CLOSET", whatsappNumber: "233201234567", deliveryFee: 2500 }).expect(200);
+    const res = await placeOrder([{ productId: gel.id, quantity: 1 }], { expectedTotal: 4500 }).expect(409);
+    expect(res.body.error.code).toBe("PRICE_CHANGED");
+    expect(await Order.countDocuments()).toBe(0);
+  });
+
+  it("charges nothing and says so when the fee is agreed on WhatsApp", async () => {
+    const { order, message } = (await placeOrder([{ productId: gel.id, quantity: 1 }]).expect(201)).body.data;
+    expect(order).toMatchObject({ deliveryFee: null, total: 4500 });
+    expect(message).toContain("Delivery Fee: To be confirmed");
+  });
+
+  it("requires the customer to confirm the number is on WhatsApp", async () => {
+    const res = await placeOrder([{ productId: gel.id, quantity: 1 }], { customer: { ...customer, whatsappConfirmed: false } }).expect(400);
+    expect(res.body.error.details.fields).toHaveProperty("customer.whatsappConfirmed");
+    expect(await Order.countDocuments()).toBe(0);
   });
 
   it("issues sequential order references", async () => {

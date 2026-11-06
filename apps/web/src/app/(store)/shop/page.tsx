@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { WhatsAppCta } from "@/components/home/WhatsAppCta";
-import { ProductGridSkeleton } from "@/components/products/ProductGrid";
-import { ProductListing } from "@/components/products/ProductListing";
+import { ShopListing, ShopListingSkeleton } from "@/components/products/ShopListing";
 import { getMetadataSettings } from "@/lib/catalog";
 
 export async function generateMetadata({ searchParams }: PageProps<"/shop">): Promise<Metadata> {
@@ -37,29 +36,12 @@ export async function generateMetadata({ searchParams }: PageProps<"/shop">): Pr
 export default function ShopPage({ searchParams }: PageProps<"/shop">) {
   return (
     <>
-      <div className="container-page pt-5 sm:pt-8">
-        <Suspense
-          fallback={
-            <div className="space-y-4 sm:space-y-5" aria-hidden="true">
-              <div className="skeleton h-8 w-40" />
-              <div className="flex gap-2 overflow-hidden">
-                {Array.from({ length: 5 }, (_, i) => (
-                  <div key={i} className="skeleton h-11 w-28 shrink-0 rounded-full" />
-                ))}
-              </div>
-              <div className="skeleton h-10 rounded-full" />
-              <ProductGridSkeleton />
-            </div>
-          }
-        >
-          <ProductListing searchParams={searchParams} />
-        </Suspense>
-      </div>
-      <div className="pt-4">
-        <Suspense fallback={null}>
-          <WhatsAppCta />
-        </Suspense>
-      </div>
+      <Suspense fallback={<ShopListingSkeleton />}>
+        <ShopListing searchParams={searchParams} />
+      </Suspense>
+      <Suspense fallback={null}>
+        <WhatsAppCta />
+      </Suspense>
     </>
   );
 }

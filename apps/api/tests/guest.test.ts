@@ -11,7 +11,7 @@ import { CUSTOMER_COOKIE } from "../src/services/customerSessionService.js";
 import { ORIGIN, guestVisitor, ownedImage, resetDatabase, startDatabase, stopDatabase } from "./helpers.js";
 
 const app = createApp();
-const customer = { name: "Ama Mensah", phone: "0278857814", fulfillmentMethod: "pickup" };
+const customer = { name: "Ama Mensah", phone: "0278857814", whatsappConfirmed: true, fulfillmentMethod: "pickup" };
 let a: Awaited<ReturnType<typeof guestVisitor>>;
 let b: Awaited<ReturnType<typeof guestVisitor>>;
 let productId: string;
@@ -212,7 +212,7 @@ describe("image-rich shared order previews", () => {
     const response = await request(app).get(`/api/orders/preview/${token}`).expect(200);
     const preview = response.body.data;
     expect(preview).toMatchObject({ orderReference: order.orderReference, total: 1400, items: [{ name: "Liquid soap", image: image.url, quantity: 2, unitPrice: 700, lineTotal: 1400 }] });
-    expect(Object.keys(preview).sort()).toEqual(["storeName", "orderReference", "items", "total", "createdAt", "expiresAt"].sort());
+    expect(Object.keys(preview).sort()).toEqual(["storeName", "orderReference", "items", "deliveryFee", "total", "createdAt", "expiresAt"].sort());
     expect(Object.keys(preview.items[0]).sort()).toEqual(["name", "image", "attributes", "quantity", "unitPrice", "lineTotal"].sort());
     expect(JSON.stringify(preview)).not.toContain(customer.name);
     expect(JSON.stringify(preview)).not.toContain("233278857814");

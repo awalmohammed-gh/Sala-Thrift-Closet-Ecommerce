@@ -280,6 +280,8 @@ export const settingsInputSchema = z.object({
   whatsappOrderingEnabled: z.boolean().default(true),
   whatsappGreeting: optionalText(120, "Greeting"),
   whatsappSupportMessage: optionalText(300, "Support message"),
+  /** Pesewas charged for doorstep delivery; null means it is agreed on WhatsApp. */
+  deliveryFee: pesewasSchema.nullable().default(null),
   notifications: notificationSettingsSchema.default(DEFAULT_NOTIFICATION_SETTINGS),
   storefront: storefrontSettingsSchema.default(DEFAULT_STOREFRONT_SETTINGS),
 });
@@ -384,7 +386,8 @@ export const checkoutCustomerSchema = z
   .object({
     name: z.string("Your name is required").trim().min(2, "Enter your name").max(80, "Name is too long"),
     phone: phoneSchema,
-    fulfillmentMethod: z.enum(FULFILLMENT_METHODS, "Choose delivery or pickup"),
+    whatsappConfirmed: z.literal(true, "Confirm that this number is on WhatsApp"),
+    fulfillmentMethod: z.enum(FULFILLMENT_METHODS, "Choose pickup or delivery to your doorstep"),
     deliveryLocation: optionalText(120, "Delivery location"),
     deliveryAddress: optionalText(300, "Address"),
     notes: optionalText(500, "Notes"),

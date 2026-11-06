@@ -4,7 +4,7 @@ import { getImageProps } from "next/image";
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { useAnimate } from "motion/react-mini";
-import { FiArrowRight, FiChevronLeft, FiChevronRight, FiPause, FiPlay, FiShoppingBag } from "react-icons/fi";
+import { FiArrowRight, FiChevronLeft, FiChevronRight, FiShoppingBag } from "react-icons/fi";
 import type { BannerDTO } from "@salasty-thrift-closet/shared";
 import { usePrefersReducedMotion } from "@/components/animations/usePrefersReducedMotion";
 import { EASE_OUT } from "@/components/animations/tokens";
@@ -53,7 +53,6 @@ const rise = (active: boolean, delayMs: number): { className?: string; style?: C
 
 export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
   const count = banners.length;
-  const [paused, setPaused] = useState(false);
   // `seen` slides keep their image mounted; the others don't download theirs until needed.
   const [{ index, seen, direction, transitioning }, setState] = useState({ index: 0, seen: [0], direction: 1, transitioning: false });
   const previousIndex = useRef(0);
@@ -132,7 +131,7 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
   // Automatically advance every eight seconds, including after hover or touch.
   // Background tabs and reduced-motion preferences still suspend rotation.
   useEffect(() => {
-    if (count < 2 || reduceMotion || !pageVisible || paused) return;
+    if (count < 2 || reduceMotion || !pageVisible) return;
     const timer = window.setTimeout(() => {
       setState((s) => {
         const i = (s.index + 1) % count;
@@ -140,7 +139,7 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
       });
     }, INTERVAL);
     return () => window.clearTimeout(timer);
-  }, [index, count, reduceMotion, pageVisible, paused]);
+  }, [index, count, reduceMotion, pageVisible]);
 
   // After the page has finished loading, fetch the next slide's image in the background.
   const nextIndex = (index + 1) % count;
@@ -150,7 +149,7 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
     <section
       aria-roledescription="carousel"
       aria-label="Featured promotions"
-      className="relative h-[380px] overflow-hidden bg-brand-deep sm:h-[360px] lg:h-[376px]"
+      className="relative h-full overflow-hidden bg-brand-deep"
     >
       {/* Reserve space for the photo and readable overlay at every screen size. */}
       <div ref={scope} className="relative grid h-full min-h-0 grid-rows-[minmax(0,1fr)]">
@@ -173,31 +172,31 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
                   priority={i === 0}
                 />
               )}
-              <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(16,56,45,0.4)_0%,rgba(16,56,45,0.8)_50%,rgba(16,56,45,0.65)_100%)]" aria-hidden="true" />
+              <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(15,36,87,0.4)_0%,rgba(15,36,87,0.8)_50%,rgba(15,36,87,0.65)_100%)]" aria-hidden="true" />
               <div className="container-page absolute inset-0 overflow-y-auto">
-                <div className="flex min-h-full items-center justify-center pt-7 pb-20">
-                <div className="w-full min-w-0 max-w-3xl text-center text-cream">
+                <div className="flex min-h-full items-center justify-center pt-4 pb-12 md:pb-16">
+                <div className="w-full min-w-0 max-w-3xl px-12 text-center text-cream md:px-0">
                   {banner.eyebrow && (
-                    <p style={rise(active, 0).style} className={cn("mx-auto mb-3 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-cream backdrop-blur-sm sm:text-xs", rise(active, 0).className)}>
+                    <p style={rise(active, 0).style} className={cn("mx-auto mb-3 hidden items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-cream backdrop-blur-sm md:inline-flex", rise(active, 0).className)}>
                       <FiShoppingBag className="size-3.5 text-accent" aria-hidden="true" />
                       {banner.eyebrow}
                     </p>
                   )}
                   {i === 0 ? (
-                    <h1 style={rise(active, 60).style} className={cn("text-3xl font-bold leading-[1.1] tracking-tight text-balance sm:text-4xl lg:text-5xl", rise(active, 60).className)}>
+                    <h1 style={rise(active, 60).style} className={cn("text-2xl font-bold leading-[1.1] tracking-tight text-balance lg:text-4xl", rise(active, 60).className)}>
                       {banner.title}
                     </h1>
                   ) : (
-                    <h2 style={rise(active, 60).style} className={cn("text-3xl font-bold leading-[1.1] tracking-tight text-balance sm:text-4xl lg:text-5xl", rise(active, 60).className)}>
+                    <h2 style={rise(active, 60).style} className={cn("text-2xl font-bold leading-[1.1] tracking-tight text-balance lg:text-4xl", rise(active, 60).className)}>
                       {banner.title}
                     </h2>
                   )}
-                  {banner.description && <p className="mx-auto mt-3 line-clamp-3 max-w-lg text-center text-xs leading-relaxed text-cream/85 sm:text-sm">{banner.description}</p>}
+                  {banner.description && <p className="mx-auto mt-2 hidden max-w-lg text-center text-sm leading-relaxed text-cream/85 line-clamp-2 md:block">{banner.description}</p>}
                   {banner.buttonText && banner.buttonLink && (
-                    <div style={rise(active, 220).style} className={cn("mt-4 flex flex-wrap items-center justify-center gap-3", rise(active, 220).className)}>
-                      <Link href={banner.buttonLink} tabIndex={active ? 0 : -1} className={buttonClasses("hero", "lg", "group min-w-44 shadow-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white")}>
+                    <div style={rise(active, 220).style} className={cn("mt-3 flex flex-wrap items-center justify-center gap-3", rise(active, 220).className)}>
+                      <Link href={banner.buttonLink} tabIndex={active ? 0 : -1} className={buttonClasses("hero", "md", "group rounded-full! px-5 shadow-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white")}>
                         {banner.buttonText}
-                        <FiArrowRight className="size-5 transition-transform duration-200 ease-out-soft group-hover:translate-x-0.5" aria-hidden="true" />
+                        <FiArrowRight className="size-4 transition-transform duration-200 ease-out-soft group-hover:translate-x-0.5" aria-hidden="true" />
                       </Link>
 
                     </div>
@@ -212,7 +211,7 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
       </div>
 
       {count > 1 && (
-        <div className="absolute inset-x-0 bottom-0 z-20 flex min-h-16 items-center gap-2 border-t border-white/15 bg-brand-deep/40 px-5 backdrop-blur-sm sm:px-8">
+        <div className="absolute inset-x-0 bottom-0 z-20 flex min-h-11 items-center gap-2 bg-brand-deep/40 px-3 backdrop-blur-sm sm:px-5">
           <div className="mr-auto flex min-w-0 items-center overflow-x-auto">
             {banners.map((banner, i) => (
               <button key={banner.id} type="button" onClick={() => show(i)} disabled={transitioning && !reduceMotion} aria-label={`Show slide ${i + 1}: ${banner.title}`} aria-current={i === index} className="group flex size-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-accent">
@@ -220,13 +219,12 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
               </button>
             ))}
           </div>
-          <button type="button" onClick={() => setPaused((value) => !value)} aria-label={paused ? "Play promotions" : "Pause promotions"} aria-pressed={paused} className="flex size-11 shrink-0 items-center justify-center rounded-full text-white hover:bg-white/15">{paused ? <FiPlay className="size-4" aria-hidden="true" /> : <FiPause className="size-4" aria-hidden="true" />}</button>
-          <span className="mr-1 shrink-0 text-xs tabular-nums text-cream/70" aria-hidden="true">{String(index + 1).padStart(2, "0")} / {String(count).padStart(2, "0")}</span>
+          <span className="mr-1 hidden shrink-0 text-xs tabular-nums text-cream/70 md:inline" aria-hidden="true">{String(index + 1).padStart(2, "0")} / {String(count).padStart(2, "0")}</span>
           <button
             type="button"
             onClick={() => show(index - 1, -1)}
             disabled={transitioning && !reduceMotion}
-            className="flex size-11 shrink-0 items-center justify-center rounded-full border border-white/60 bg-white text-brand shadow-sm transition-colors hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-default"
+            className="hidden size-9 shrink-0 items-center justify-center rounded-full bg-white text-brand shadow-sm transition-colors hover:bg-brand-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-default md:flex"
             aria-label="Previous slide"
           >
             <FiChevronLeft className="size-6" />
@@ -235,7 +233,7 @@ export function HeroCarousel({ banners }: { banners: HeroBanner[] }) {
             type="button"
             onClick={() => show(index + 1, 1)}
             disabled={transitioning && !reduceMotion}
-            className="flex size-11 shrink-0 items-center justify-center rounded-full border border-white/60 bg-white text-brand shadow-sm transition-colors hover:bg-cream focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-default"
+            className="hidden size-9 shrink-0 items-center justify-center rounded-full bg-white text-brand shadow-sm transition-colors hover:bg-brand-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-default md:flex"
             aria-label="Next slide"
           >
             <FiChevronRight className="size-6" />

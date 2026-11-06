@@ -42,6 +42,8 @@ export interface OrderDoc {
   customer: { name: string; phone: string };
   items: OrderItemDoc[];
   subtotal: number;
+  /** Snapshot of the doorstep fee at order time, included in total. */
+  deliveryFee: number | null;
   total: number;
   fulfillmentMethod: FulfillmentMethod;
   deliveryLocation: string;
@@ -105,6 +107,7 @@ const orderSchema = new Schema<OrderDoc>(
       validate: { validator: (items: unknown[]) => items.length > 0, message: "An order needs at least one item" },
     },
     subtotal: { type: Number, required: true, min: 0, validate: integerValidator },
+    deliveryFee: { type: Number, default: null, min: 0 },
     total: { type: Number, required: true, min: 0, validate: integerValidator },
     fulfillmentMethod: { type: String, enum: FULFILLMENT_METHODS, required: true },
     deliveryLocation: { type: String, default: "", maxlength: 120 },

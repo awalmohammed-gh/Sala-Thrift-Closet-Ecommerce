@@ -33,6 +33,7 @@ export const fallbackSettings: StoreSettingsDTO = {
   whatsappOrderingEnabled: true,
   whatsappGreeting: "",
   whatsappSupportMessage: "",
+  deliveryFee: null,
   notifications: { ...DEFAULT_NOTIFICATION_SETTINGS },
   storefront: { ...DEFAULT_STOREFRONT_SETTINGS },
   updatedAt: null,

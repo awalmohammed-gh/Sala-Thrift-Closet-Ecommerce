@@ -1,5 +1,10 @@
+"use client";
+
 import Image from "next/image";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
+
+const PLACEHOLDER = "/images/placeholders/product.svg";
 
 interface ProductImageProps {
   src: string | null | undefined;
@@ -10,16 +15,19 @@ interface ProductImageProps {
   fit?: "cover" | "contain";
 }
 
-/** Fills its (relatively positioned, fixed-ratio) parent. Falls back to a branded placeholder. */
+/** Fills its (relatively positioned, fixed-ratio) parent. Missing or broken photos show a branded placeholder. */
 export function ProductImage({ src, alt, sizes, priority, className, fit = "cover" }: ProductImageProps) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const usable = src && src !== failedSrc ? src : null;
   return (
     <Image
-      src={src || "/images/placeholders/product.svg"}
-      alt={src ? alt : ""}
+      src={usable || PLACEHOLDER}
+      alt={usable ? alt : ""}
       fill
       sizes={sizes}
-      priority={priority}
-      className={cn(fit === "contain" || !src ? "object-contain" : "object-cover", className)}
+      loading={priority ? "eager" : undefined}
+      onError={() => setFailedSrc(usable)}
+      className={cn(fit === "contain" || !usable ? "object-contain" : "object-cover", className)}
     />
   );
 }

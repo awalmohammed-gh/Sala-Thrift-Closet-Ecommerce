@@ -75,6 +75,9 @@ export interface ProductQuery {
   availability?: "all" | "in-stock";
   featured?: boolean;
   onSale?: boolean;
+  /** Pesewas. */
+  minPrice?: number;
+  maxPrice?: number;
   exclude?: string;
   page?: number;
   limit?: number;
@@ -92,6 +95,8 @@ export async function getProducts(query: ProductQuery = {}): Promise<Paginated<P
       availability: query.availability === "in-stock" ? "in-stock" : undefined,
       featured: query.featured,
       onSale: query.onSale,
+      minPrice: query.minPrice,
+      maxPrice: query.maxPrice,
       exclude: query.exclude,
       page: query.page && query.page > 1 ? query.page : undefined,
       limit: query.limit,

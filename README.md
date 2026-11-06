@@ -53,7 +53,7 @@ Then:
 1. Sign in at **http://localhost:3000/admin/login**.
 2. Check **Settings**. Customer orders go to the WhatsApp number there (pre-filled from `STORE_WHATSAPP_NUMBER`, set this brand's number before accepting orders).
 3. Add or edit **categories** and **products** (images, prices, stock, variants).
-4. Manage homepage **banners** (image, small heading, heading, description, button). Without active banners the homepage skips the hero.
+4. Manage homepage **banners** (image, small heading, heading, description, button). Active banners replace the house slides at the top of the homepage.
 
 `market/.env` is the only env file. The API loads it in development and in the compiled server, and the web app loads it from `next.config.ts` (except `PORT` and `NODE_ENV`, which belong to the API). Explicitly supplied process/deployment variables take priority over the file. The API also still accepts the older names `CLOUD_NAME`, `CLOUD_API_KEY`, `CLOUD_SECRET_KEY`, `jwt_key`, `admin_email`, and `admin_psd`, which map to the canonical settings. Tests never load the real file.
 
@@ -141,6 +141,7 @@ Admin → Settings has five sections. Every value is stored in the single MongoD
 | General | Store name, description, contact email, phone, address, business hours, social links | Navbar, footer, page titles and descriptions, Contact/About pages, admin title and sign-in |
 | Branding | Logo, favicon (Cloudinary) | Navbar, mobile menu, footer, admin menu and sign-in, order previews, 404 page, browser tab, push icon, Home Screen app |
 | WhatsApp | Business number, accept orders on/off, order greeting, support chat message | Product and cart checkout, every "Chat with us" link, order help links |
+| Delivery (under WhatsApp) | Doorstep delivery fee. Empty means it is agreed on WhatsApp; 0 means free | Cart, checkout, order total, WhatsApp message, order pages |
 | Notifications | Store notifications on/off, new-product and promotional types, admin order alerts, invitation delay; subscriber counts; compose and publish | Notification bell, opt-in invitation, push delivery, dashboard alerts |
 | Storefront | Announcement bar, featured products and new arrivals sections | Every page header, homepage |
 
@@ -166,9 +167,11 @@ Setup: generate keys once with `npx web-push generate-vapid-keys` and set `VAPID
 
 ## Animations
 
-Landing-page motion uses [Motion](https://motion.dev) (`motion` 13.5.1), kept deliberately small:
+Storefront motion uses [Motion](https://motion.dev) (`motion` 13.5.1), kept deliberately small:
 
 - **Scroll reveals** (`components/animations/`): `RevealOnScroll` and `StaggerContainer` use one `IntersectionObserver` per section and Motion's mini `useAnimate` (`motion/react-mini`, Web Animations API). Only `opacity` and `translate` animate. The server renders everything visible; only content still below the screen after hydration is hidden and then revealed, so nothing flickers and content stays visible if JavaScript is slow. Reveals are skipped with reduced motion and forced visible when printing.
+- **Interaction helpers** (`components/animations/`): `RiseOnChange` lifts new results in after a filter, `PopOnChange` bounces totals and cart badges when they change, and `Collapse` opens and closes content smoothly. All use `motion/react-mini` and do nothing under reduced motion. The `stagger-in` utility is the CSS entrance for items on screen when a page opens.
+- **Smooth scrolling**: `SmoothScroll` loads [Lenis](https://github.com/darkroomengineering/lenis) on demand for mouse-wheel scrolling on desktop only. Phones and reduced-motion visitors never download it. Dialogs, menus and scrollable lists keep their own scrolling.
 - **Do not import from `motion/react` on storefront pages**: even one hook pulls in Motion's full React bundle (about 45 KB gzipped). Use `motion/react-mini` and the helpers in `components/animations/`.
 - **Hero**: Motion's mini `useAnimate` glides incoming and outgoing banners together over 900ms, with directional navigation and a gentle image zoom. The first banner renders immediately; copy rises in with a CSS keyframe (`animate-hero-rise`). Hidden slides load their image only when about to be shown. The automatic timer runs every 6.5 seconds, pauses on hover, keyboard focus and hidden tabs, and is off with reduced motion. Manual navigation switches instantly with reduced motion. Controls briefly lock during a transition to prevent overlapping animations.
 - **Hovers**: the `lift` utility (globals.css) raises cards 2px and fades in a shadow layer (transform + opacity only, hover-capable pointers only). Images zoom 3–4%.

@@ -36,6 +36,7 @@ export function OrderPreview({ order, logo = null }: { order: OrderPreviewDTO; l
       </ul>
     </div>
     <footer className="space-y-5 bg-brand-50 px-5 py-6 sm:px-8">
+      {order.deliveryFee !== null && <div className="flex items-center justify-between gap-4 text-sm"><p className="text-muted">Delivery fee</p><p className="font-semibold text-ink">{formatGHS(order.deliveryFee)}</p></div>}
       <div className="flex items-center justify-between gap-4"><p className="font-semibold text-brand">Grand total</p><p className="text-3xl font-bold text-brand-deep">{formatGHS(order.total)}</p></div>
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-brand/10 pt-4">
         <p className="max-w-md text-xs leading-relaxed text-muted">This shared preview contains products and totals only. It expires {formatDateTime(order.expiresAt)}. This is an order request, not a payment receipt.</p>

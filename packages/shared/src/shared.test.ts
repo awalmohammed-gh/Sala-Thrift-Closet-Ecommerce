@@ -92,6 +92,14 @@ describe("WhatsApp", () => {
     notes: "Call before delivery",
   });
 
+  it("shows the delivery fee in the message for doorstep orders", () => {
+    const base = { storeName: "S", orderReference: "SAL-1", items: [], subtotal: 10000, total: 12500, customer: { name: "Ama", phone: "233241234567" } };
+    const text = buildOrderMessage({ ...base, fulfillmentMethod: "delivery", deliveryLocation: "Accra", deliveryFee: 2500 });
+    expect(text).toContain("Items Subtotal: GHS 100.00\nDelivery Fee: GHS 25.00\nTotal: GHS 125.00");
+    expect(buildOrderMessage({ ...base, total: 10000, fulfillmentMethod: "delivery", deliveryLocation: "Accra", deliveryFee: null })).toContain("Delivery Fee: To be confirmed");
+    expect(buildOrderMessage({ ...base, total: 10000, fulfillmentMethod: "pickup", deliveryFee: null })).not.toContain("Delivery Fee");
+  });
+
   it("builds the order message from validated order data", () => {
     expect(message).toBe(
       [
@@ -119,7 +127,7 @@ describe("WhatsApp", () => {
         "",
         "Customer Name: Ama Mensah",
         "Phone: +233 24 123 4567",
-        "Delivery Method: Delivery",
+        "Delivery Method: Delivery to your doorstep",
         "Location: East Legon, Accra",
         "Notes: Call before delivery",
         "",
@@ -225,10 +233,16 @@ describe("schemas", () => {
     expect(duplicate.success).toBe(false);
   });
 
+  it("requires the customer to confirm the number is on WhatsApp", () => {
+    const details = { name: "Ama", phone: "0241234567", fulfillmentMethod: "pickup" };
+    expect(checkoutCustomerSchema.safeParse(details).success).toBe(false);
+    expect(checkoutCustomerSchema.safeParse({ ...details, whatsappConfirmed: false }).success).toBe(false);
+  });
+
   it("requires a delivery location for delivery orders", () => {
-    const missing = checkoutCustomerSchema.safeParse({ name: "Ama", phone: "0241234567", fulfillmentMethod: "delivery" });
+    const missing = checkoutCustomerSchema.safeParse({ name: "Ama", phone: "0241234567", whatsappConfirmed: true, fulfillmentMethod: "delivery" });
     expect(missing.success).toBe(false);
-    const pickup = checkoutCustomerSchema.safeParse({ name: "Ama", phone: "0241234567", fulfillmentMethod: "pickup" });
+    const pickup = checkoutCustomerSchema.safeParse({ name: "Ama", phone: "0241234567", whatsappConfirmed: true, fulfillmentMethod: "pickup" });
     expect(pickup.success).toBe(true);
     if (pickup.success) expect(pickup.data.phone).toBe("233241234567");
   });

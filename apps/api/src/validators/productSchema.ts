@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  LIMITS,
   PRODUCT_SORTS,
   SLUG_PATTERN,
   objectIdSchema,
@@ -15,6 +16,7 @@ const flag = z
   .transform((v) => v === "true" || v === "1");
 
 const page = z.coerce.number().int().min(1).max(10_000).default(1);
+const pesewas = z.coerce.number().int().min(0).max(LIMITS.maxPriceInPesewas).optional();
 
 export const publicProductQuerySchema = z.object({
   q: z.string().trim().max(100).default(""),
@@ -23,6 +25,9 @@ export const publicProductQuerySchema = z.object({
   availability: z.enum(["all", "in-stock"]).default("all"),
   featured: flag,
   onSale: flag,
+  /** Only products with an option a shopper can buy within this range of pesewas. */
+  minPrice: pesewas,
+  maxPrice: pesewas,
   exclude: objectIdSchema.optional(),
   page,
   limit: z.coerce.number().int().min(1).max(48).default(12),

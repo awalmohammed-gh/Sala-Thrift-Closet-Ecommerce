@@ -3,29 +3,25 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useId, useRef, useState, type Ref } from "react";
-import { FaWhatsapp } from "react-icons/fa";
-import { FiArrowRight, FiArrowUpRight, FiPackage, FiSearch, FiShoppingBag, FiX } from "react-icons/fi";
+import { FiPackage, FiSearch, FiShoppingCart, FiX } from "react-icons/fi";
 import type { ImageAsset } from "@salasty-thrift-closet/shared";
+import { PopOnChange } from "@/components/animations/PopOnChange";
 import { Logo } from "@/components/brand/Logo";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { InstallPwaButton } from "@/components/ui/InstallPwaButton";
 import { useCart } from "@/hooks/useCart";
 import { cn } from "@/lib/utils";
-import { whatsappChatUrl } from "@/lib/whatsapp";
 
 interface NavbarProps {
   storeName: string;
   logo: ImageAsset | null;
-  whatsappNumber: string;
-  supportMessage?: string;
   notificationsEnabled?: boolean;
 }
 
 const NAV_LINKS = [
   { label: "Home", href: "/" },
   { label: "Shop", href: "/shop" },
-  { label: "New arrivals", href: "/shop?sort=newest" },
-  { label: "About us", href: "/about" },
+  { label: "About Us", href: "/about" },
   { label: "Contact", href: "/contact" },
 ];
 
@@ -41,23 +37,21 @@ interface SearchFormProps {
 export function SearchForm({ className, query = "", id: formId, inputRef, onEscape }: SearchFormProps) {
   const id = useId();
   return (
-    <form id={formId} role="search" action="/shop" method="get" onKeyDown={(event) => { if (event.key === "Escape") onEscape?.(); }} className={cn("flex min-w-0 items-center gap-2 rounded-full border border-blue-100 bg-slate-50/70 p-1.5 transition-colors focus-within:border-blue-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-50", className)}>
-      <label htmlFor={id} className="sr-only">Search clothing</label>
+    <form id={formId} role="search" action="/shop" method="get" onKeyDown={(event) => { if (event.key === "Escape") onEscape?.(); }} className={cn("flex min-w-0 items-center gap-2 rounded-full border border-blue-100 bg-slate-50/70 p-1 transition-colors focus-within:border-blue-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-50", className)}>
+      <label htmlFor={id} className="sr-only">Search the store</label>
       <FiSearch className="ml-3 size-4 shrink-0 text-slate-400" aria-hidden="true" />
-      <input ref={inputRef} key={query} id={id} name="q" type="search" maxLength={100} defaultValue={query} placeholder="Search jeans, tops, jackets..." className="h-8 min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-slate-400 sm:h-9 md:text-sm" />
-      <button type="submit" aria-label="Search clothing" className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white transition-colors hover:bg-blue-700 sm:w-auto sm:gap-2 sm:px-5"><span className="hidden text-xs font-semibold sm:inline">Search</span><FiArrowRight className="size-4" aria-hidden="true" /></button>
+      <input ref={inputRef} key={query} id={id} name="q" type="search" maxLength={100} defaultValue={query} placeholder="Search for products..." className="h-8 min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-slate-400 md:text-sm" />
+      <button type="submit" aria-label="Search" className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-deep text-white transition-colors hover:bg-brand"><FiSearch className="size-4" aria-hidden="true" /></button>
     </form>
   );
 }
 
-export function Navbar({ storeName, logo, whatsappNumber, supportMessage, notificationsEnabled = false }: NavbarProps) {
+export function Navbar({ storeName, logo, notificationsEnabled = false }: NavbarProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { itemCount, hydrated } = useCart();
-  const chatUrl = whatsappChatUrl(whatsappNumber, supportMessage || `Hello ${storeName}, I have a question about a product.`);
-  const newest = pathname === "/shop" && searchParams.get("sort") === "newest";
 
-  // Phones: search hides behind an icon and opens as a bar under the header.
+  // Below desktop width, search hides behind an icon and opens as a bar under the header.
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchPath, setSearchPath] = useState(pathname);
   if (searchPath !== pathname) {
@@ -70,20 +64,29 @@ export function Navbar({ storeName, logo, whatsappNumber, supportMessage, notifi
   }, [searchOpen]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-blue-100/80 bg-white/95 shadow-[0_8px_30px_-24px_rgba(30,64,175,0.3)] backdrop-blur-xl">
-      <div className="container-page grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-5 gap-y-3 py-3 md:grid-cols-[auto_minmax(0,1fr)_auto] md:gap-8">
+    <header className="sticky top-0 z-40 border-b border-line bg-white">
+      <div className="container-page grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-5 gap-y-2 py-2 md:grid-cols-[auto_minmax(0,1fr)_auto] lg:grid-cols-[auto_auto_minmax(0,1fr)_auto] lg:gap-x-6">
         <Link href="/" aria-label={`${storeName} home`} className="inline-flex shrink-0 items-center gap-3 rounded-xl focus-visible:outline-offset-4">
-          <Logo storeName={storeName} logo={logo} />
-          <span className="hidden border-l border-blue-100 pl-4 lg:block"><span className="block font-display text-lg font-bold tracking-[0.12em] text-slate-900">SALASTY</span><span className="mt-1 block text-[9px] font-medium uppercase tracking-[0.25em] text-slate-500">Thrift Closet</span></span>
+          <Logo storeName={storeName} logo={logo} compact />
+          <span className="hidden border-l border-blue-100 pl-4 xl:block"><span className="block font-display text-lg font-bold tracking-[0.12em] text-slate-900">SALASTY</span><span className="mt-1 block text-[9px] font-medium uppercase tracking-[0.25em] text-slate-500">Thrift Closet</span></span>
         </Link>
+        {/* Phones use the bottom navigation bar instead of these links. */}
+        <nav aria-label="Main navigation" className="hidden md:col-start-2 md:row-start-1 md:block">
+          <ul className="flex w-max items-center">
+            {NAV_LINKS.map(({ label, href }) => {
+              const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+              return <li key={href}><Link href={href} aria-current={active ? "page" : undefined} className={cn("relative inline-flex min-h-11 items-center whitespace-nowrap px-3 text-sm font-medium transition-colors after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full", active ? "font-semibold text-brand after:bg-brand" : "text-ink after:bg-transparent hover:text-brand hover:after:bg-blue-200")}>{label}</Link></li>;
+            })}
+          </ul>
+        </nav>
         <SearchForm
           id="site-search"
           inputRef={searchInput}
           onEscape={() => setSearchOpen(false)}
           query={pathname === "/shop" ? searchParams.get("q") ?? "" : ""}
-          className={cn("col-span-2 row-start-2 animate-fade-in md:col-span-1 md:col-start-2 md:row-start-1 md:mx-auto md:flex md:w-full md:max-w-xl md:animate-none", searchOpen ? "flex" : "hidden")}
+          className={cn("col-span-2 row-start-2 animate-fade-in md:col-span-3 lg:col-span-1 lg:col-start-3 lg:row-start-1 lg:ml-auto lg:flex lg:w-full lg:max-w-xs lg:animate-none", searchOpen ? "flex" : "hidden")}
         />
-        <div className="col-start-2 row-start-1 ml-auto flex shrink-0 items-center gap-1 sm:gap-2 md:col-start-3">
+        <div className="col-start-2 row-start-1 ml-auto flex shrink-0 items-center gap-1 sm:gap-2 md:col-start-3 lg:col-start-4">
           <InstallPwaButton variant="navbar" className="rounded-full!" />
           {notificationsEnabled && <NotificationBell storeName={storeName} />}
           <button
@@ -92,32 +95,15 @@ export function Navbar({ storeName, logo, whatsappNumber, supportMessage, notifi
             aria-expanded={searchOpen}
             aria-controls="site-search"
             aria-label={searchOpen ? "Close search" : "Search"}
-            className={cn("inline-flex size-11 items-center justify-center rounded-full transition-colors md:hidden", searchOpen ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-blue-50 hover:text-blue-700")}
+            className={cn("inline-flex size-11 items-center justify-center rounded-full transition-colors lg:hidden", searchOpen ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-blue-50 hover:text-blue-700")}
           >
             {searchOpen ? <FiX className="size-5" aria-hidden="true" /> : <FiSearch className="size-5" aria-hidden="true" />}
           </button>
-          <Link href="/my-orders" aria-label="My orders" title="My orders" className="hidden size-11 items-center justify-center rounded-full text-slate-600 transition-colors hover:bg-blue-50 hover:text-blue-700 md:inline-flex"><FiPackage className="size-5" aria-hidden="true" /></Link>
-          <span aria-hidden="true" className="mx-1 hidden h-7 w-px bg-blue-100 sm:block" />
-          <Link href="/cart" aria-label={hydrated ? `Cart, ${itemCount} item${itemCount === 1 ? "" : "s"}` : "Cart"} className="relative inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-blue-100 bg-blue-50/60 px-3.5 text-sm font-semibold text-blue-700 transition-colors hover:border-blue-200 hover:bg-blue-100/70">
-            <FiShoppingBag className="size-5" aria-hidden="true" /><span className="hidden sm:inline">My bag</span>
-            {hydrated && itemCount > 0 && <span className="flex min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] font-bold text-white">{itemCount > 99 ? "99+" : itemCount}</span>}
+          <Link href="/my-orders" aria-label="My Orders" className="hidden min-h-11 items-center gap-2 rounded-full px-3 text-sm font-medium text-ink transition-colors hover:text-brand md:inline-flex"><FiPackage className="size-5" aria-hidden="true" /><span className="hidden xl:inline">My Orders</span></Link>
+          <Link href="/cart" aria-label={hydrated ? `Cart, ${itemCount} item${itemCount === 1 ? "" : "s"}` : "Cart"} className="relative inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-3 text-sm font-medium text-ink transition-colors hover:text-brand">
+            <FiShoppingCart className="size-5" aria-hidden="true" /><span className="hidden sm:inline">Cart</span>
+            {hydrated && itemCount > 0 && <PopOnChange value={itemCount} className="absolute right-0 top-0 min-w-5 rounded-full bg-danger px-1 py-0.5 text-center text-[10px] font-bold leading-none text-white">{itemCount > 99 ? "99+" : itemCount}</PopOnChange>}
           </Link>
-        </div>
-      </div>
-      {/* Phones use the bottom navigation bar instead of this link row. */}
-      <div className="hidden border-t border-slate-100 bg-linear-to-r from-blue-50/60 via-white to-blue-50/40 md:block">
-        <div className="container-page flex items-center justify-between gap-6">
-          <nav aria-label="Main navigation" className="min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <ul className="flex w-max items-center gap-1 sm:gap-3">
-              {NAV_LINKS.map((item) => {
-                const active = item.href.includes("?") ? newest : item.href === "/shop" ? pathname === "/shop" && !newest : item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-                return <li key={item.href}><Link href={item.href} aria-current={active ? "page" : undefined} className={cn("relative inline-flex min-h-12 items-center whitespace-nowrap px-3 text-xs font-medium transition-colors after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full sm:px-4 sm:text-sm", active ? "text-blue-700 after:bg-blue-600" : "text-slate-500 after:bg-transparent hover:text-blue-700 hover:after:bg-blue-200")}>
-                  {item.label}{item.label === "New arrivals" && <FiArrowUpRight className="ml-1.5 size-3.5 text-blue-500" aria-hidden="true" />}
-                </Link></li>;
-              })}
-            </ul>
-          </nav>
-          {chatUrl && <a href={chatUrl} target="_blank" rel="noopener noreferrer" className="hidden min-h-12 shrink-0 items-center gap-2 text-xs font-medium text-blue-700 lg:inline-flex"><FaWhatsapp className="size-4" aria-hidden="true" />Let&apos;s talk style<span className="sr-only"> on WhatsApp, opens in a new tab</span></a>}
         </div>
       </div>
     </header>

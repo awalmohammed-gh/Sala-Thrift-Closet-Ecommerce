@@ -154,6 +154,8 @@ function buildResult(order: OrderDoc, storeName: string, whatsappNumber: string,
     storeName,
     orderReference: order.orderReference,
     items: dto.items,
+    subtotal: order.subtotal,
+    deliveryFee: order.deliveryFee ?? null,
     total: order.total,
     customer: order.customer,
     fulfillmentMethod: order.fulfillmentMethod,
@@ -170,6 +172,7 @@ function buildResult(order: OrderDoc, storeName: string, whatsappNumber: string,
       status: dto.status,
       items: dto.items,
       subtotal: dto.subtotal,
+      deliveryFee: dto.deliveryFee,
       total: dto.total,
       createdAt: dto.createdAt,
     },
@@ -215,9 +218,12 @@ export async function createWhatsAppOrder(input: WhatsAppOrderInput, guest: Cust
   if (quote.hasIssues) {
     throw ApiError.conflict("Some items in your cart changed. Please review your cart and try again.", "CART_CHANGED", { quote });
   }
-  if (input.expectedTotal !== undefined && input.expectedTotal !== quote.total) {
+  // The fee comes from the store's settings, never from the browser.
+  const deliveryFee = input.customer.fulfillmentMethod === "delivery" ? settings.deliveryFee ?? null : null;
+  const total = quote.total + (deliveryFee ?? 0);
+  if (input.expectedTotal !== undefined && input.expectedTotal !== total) {
     throw ApiError.conflict(
-      `Prices changed since you opened your cart. The new total is ${formatGHS(quote.total)}.`,
+      `Prices changed since you opened your cart. The new total is ${formatGHS(total)}.`,
       "PRICE_CHANGED",
       { quote },
     );
@@ -255,7 +261,8 @@ export async function createWhatsAppOrder(input: WhatsAppOrderInput, guest: Cust
         customer: { name: input.customer.name, phone: input.customer.phone },
         items,
         subtotal: quote.subtotal,
-        total: quote.total,
+        deliveryFee,
+        total,
         fulfillmentMethod: input.customer.fulfillmentMethod,
         deliveryLocation: input.customer.fulfillmentMethod === "delivery" ? input.customer.deliveryLocation : "",
         deliveryAddress: input.customer.fulfillmentMethod === "delivery" ? input.customer.deliveryAddress : "",
@@ -288,6 +295,7 @@ function toCustomerOrder(order: OrderDoc, settings: SettingsDoc): CustomerOrderD
     items: dto.items,
     itemCount: dto.itemCount,
     subtotal: dto.subtotal,
+    deliveryFee: dto.deliveryFee,
     total: dto.total,
     fulfillmentMethod: dto.fulfillmentMethod,
     deliveryLocation: dto.deliveryLocation,
