@@ -10,6 +10,7 @@ import { Logo } from "@/components/brand/Logo";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { InstallPwaButton } from "@/components/ui/InstallPwaButton";
 import { useCart } from "@/hooks/useCart";
+import { storePath } from "@/lib/storePath";
 import { cn } from "@/lib/utils";
 
 interface NavbarProps {
@@ -47,7 +48,7 @@ export function SearchForm({ className, query = "", id: formId, inputRef, onEsca
 }
 
 export function Navbar({ storeName, logo, notificationsEnabled = false }: NavbarProps) {
-  const pathname = usePathname();
+  const pathname = storePath(usePathname());
   const searchParams = useSearchParams();
   const { itemCount, hydrated } = useCart();
 

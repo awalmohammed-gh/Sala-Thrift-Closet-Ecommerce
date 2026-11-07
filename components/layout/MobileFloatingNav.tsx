@@ -16,6 +16,7 @@ import {
 } from "react-icons/hi2";
 import { PopOnChange } from "@/components/animations/PopOnChange";
 import { useCart } from "@/hooks/useCart";
+import { storePath } from "@/lib/storePath";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -27,7 +28,7 @@ const TABS = [
 ] as const;
 
 export function MobileFloatingNav() {
-  const pathname = usePathname();
+  const pathname = storePath(usePathname());
   const { itemCount, hydrated } = useCart();
   const count = hydrated ? itemCount : 0;
 
