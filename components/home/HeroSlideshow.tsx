@@ -14,16 +14,57 @@ import {
 import { usePrefersReducedMotion } from "@/components/animations/usePrefersReducedMotion";
 import { cn } from "@/lib/utils";
 
-/** `edges` are the colours at each photo's left and right sides, so a portrait photo can melt into a wide banner. */
-const SLIDES = [
+interface Slide {
+  image: string;
+  /** The colours at the photo's left and right sides, so a portrait photo can melt into a wide banner. */
+  edges: string;
+  tag: string;
+  lead: string;
+  accent: string;
+  rest: string;
+  /** Says what the photo shows. The first slide says what the store does instead. */
+  text: string;
+  action: { label: string; href: string };
+  /** Which part of a tall photo to keep when the banner crops it. */
+  focus?: string;
+  /** Makes the image a logo card, named for screen readers. Photos sit beside copy that describes them. */
+  logoAlt?: string;
+}
+
+const SHOP_NOW = { label: "Shop now", href: "/shop" };
+
+const SLIDES: readonly Slide[] = [
   {
-    image: "/images/editorial/look-denim-main.webp",
-    edges: "#b6b5ba, #bebdc4",
-    tag: "New stock every week",
-    lead: "Good finds.",
-    accent: "Great",
-    rest: " prices.",
-    text: "Pick what you love and send your order on WhatsApp.",
+    image: "/images/brand/salasty-logo.webp",
+    edges: "#e7d9c5, #f3e8d9",
+    logoAlt: "SALASTY Thrift Closet logo",
+    tag: "Welcome to SALASTY",
+    lead: "Many products.",
+    accent: "One",
+    rest: " easy store.",
+    text: "Shop clothing, perfumes and more, then send your order on WhatsApp.",
+    action: { label: "Shop all", href: "/shop" },
+  },
+  {
+    image: "/images/editorial/look-perfume.webp",
+    edges: "#221112, #331312",
+    tag: "Perfumes",
+    lead: "All kinds of",
+    accent: "perfumes",
+    rest: ".",
+    text: "We sell all kinds of perfume, from light and fresh to rich and woody.",
+    action: SHOP_NOW,
+  },
+  {
+    image: "/images/editorial/look-abaya.webp",
+    edges: "#8c6747, #cab4a3",
+    focus: "50% 62%",
+    tag: "Modest fashion",
+    lead: "Elegant abayas,",
+    accent: "made",
+    rest: " to flow.",
+    text: "A flowing black abaya with cream trim and wide, graceful sleeves.",
+    action: SHOP_NOW,
   },
   {
     image: "/images/editorial/look-denim-detail.webp",
@@ -32,18 +73,20 @@ const SLIDES = [
     lead: "Wide leg denim,",
     accent: "ready",
     rest: " to wear.",
-    text: "Fresh pieces land on the rail every week.",
+    text: "Dark blue, high-waisted jeans with a wide, easy leg.",
+    action: { label: "See new arrivals", href: "/shop?sort=newest" },
   },
   {
     image: "/images/editorial/look-wrap-dress.webp",
     edges: "#79796e, #bcbeb8",
-    tag: "No account needed",
-    lead: "Order in minutes,",
-    accent: "right",
-    rest: " on WhatsApp.",
-    text: "Add to cart, tap send, and we confirm with you.",
+    tag: "Dresses",
+    lead: "Wrap dresses,",
+    accent: "easy",
+    rest: " to wear.",
+    text: "A long brown wrap dress with relaxed sleeves and a flowing skirt.",
+    action: SHOP_NOW,
   },
-] as const;
+];
 
 const INTERVAL_MS = 5000;
 const SWIPE_PX = 40;
@@ -52,10 +95,10 @@ const BUTTON =
   "group inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-full bg-tag px-3.5 text-[13px] font-bold text-brand-deep shadow-lg transition-colors hover:bg-white sm:gap-2 sm:px-5 sm:text-sm lg:min-h-13 lg:px-6 lg:text-base";
 
 function SlideAction({
-  index,
+  slide,
   chatUrl,
 }: {
-  index: number;
+  slide: Slide;
   chatUrl: string | null;
 }) {
   const arrow: ReactNode = (
@@ -64,7 +107,7 @@ function SlideAction({
       aria-hidden="true"
     />
   );
-  if (index === 0 && chatUrl)
+  if (slide === SLIDES[0] && chatUrl)
     return (
       <a
         href={chatUrl}
@@ -77,15 +120,10 @@ function SlideAction({
         <span className="sr-only"> (opens in a new tab)</span>
       </a>
     );
-  if (index === 1)
-    return (
-      <Link href="/shop?sort=newest" className={BUTTON}>
-        See new arrivals{arrow}
-      </Link>
-    );
   return (
-    <Link href="/shop" className={BUTTON}>
-      Shop all{arrow}
+    <Link href={slide.action.href} className={BUTTON}>
+      {slide.action.label}
+      {arrow}
     </Link>
   );
 }
@@ -218,15 +256,20 @@ export function HeroSlideshow({ chatUrl }: { chatUrl: string | null }) {
             >
               <div
                 data-photo
-                className="absolute inset-y-0 left-1/2 aspect-3/4 -translate-x-1/2 mask-[linear-gradient(to_right,transparent,black_18%,black_82%,transparent)]"
+                className={
+                  slide.logoAlt
+                    ? "absolute left-[54%] top-1/2 size-32 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-3xl shadow-xl min-[375px]:size-36 sm:size-48 lg:size-72"
+                    : "absolute inset-y-0 left-1/2 aspect-3/4 -translate-x-1/2 mask-[linear-gradient(to_right,transparent,black_18%,black_82%,transparent)]"
+                }
               >
                 <Image
                   src={slide.image}
-                  alt=""
+                  alt={slide.logoAlt ?? ""}
                   fill
                   sizes="(min-width: 1024px) 340px, (min-width: 640px) 260px, 200px"
                   priority={i === 0}
                   className="object-cover"
+                  style={slide.focus ? { objectPosition: slide.focus } : undefined}
                 />
               </div>
             </div>
@@ -245,7 +288,7 @@ export function HeroSlideshow({ chatUrl }: { chatUrl: string | null }) {
                 </p>
                 <Heading
                   data-rise
-                  className="mt-2 font-display text-[clamp(1.5rem,6.6vw,2.5rem)] font-bold leading-[1.05] tracking-[-0.035em] lg:mt-3 lg:text-[4rem]"
+                  className="mt-2 font-display text-[clamp(1.25rem,6.6vw,2.5rem)] font-bold leading-[1.05] tracking-[-0.035em] lg:mt-3 lg:text-[3.25rem] xl:text-[4rem]"
                 >
                   <span className="block">{slide.lead}</span>
                   <span className="block">
@@ -255,12 +298,12 @@ export function HeroSlideshow({ chatUrl }: { chatUrl: string | null }) {
                 </Heading>
                 <p
                   data-rise
-                  className="mt-3 hidden text-lg text-blue-50 xl:block"
+                  className="mt-1.5 max-w-[88%] text-xs leading-snug text-blue-50 sm:text-sm lg:mt-3 lg:max-w-[24rem] lg:text-lg xl:max-w-[27rem]"
                 >
                   {slide.text}
                 </p>
-                <div data-rise className="mt-3 lg:mt-6">
-                  <SlideAction index={i} chatUrl={chatUrl} />
+                <div data-rise className="mt-2.5 lg:mt-6">
+                  <SlideAction slide={slide} chatUrl={chatUrl} />
                 </div>
               </div>
             </div>

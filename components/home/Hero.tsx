@@ -4,7 +4,7 @@ import { supportChatUrl } from "@/lib/whatsapp";
 import { HeroCarousel } from "./HeroCarousel";
 import { HeroSlideshow } from "./HeroSlideshow";
 
-const FRAME = "relative h-60 overflow-hidden rounded-b-3xl sm:h-80 lg:h-[27rem]";
+const FRAME = "relative h-72 overflow-hidden rounded-b-3xl sm:h-80 lg:h-[27rem]";
 
 /** Full-width banner: the store's own banners when it has any, otherwise the house slides. */
 export async function MarketHero() {
