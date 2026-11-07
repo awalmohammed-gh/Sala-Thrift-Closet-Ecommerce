@@ -105,7 +105,7 @@ Shared previews expose only the store name, order reference, product images, var
 
 Guest cookies expire after 30 days. Cookie removal starts a new empty visit. Carts in the old localStorage format are not automatically attached to a new session because their ownership cannot be verified. No Google sign-in, customer account, or password is required or implemented.
 
-The **Guest privacy & recovery** panel can start a fresh visit on a shared browser. This revokes the previous cookie and hides its cart and orders. An optional private recovery code can restore an earlier visit without merging it into the current one. Codes are generated from 32 random bytes, stored only as hashes, expire after 180 days, and are consumed when used. Recovery rotates the cookie and CSRF token and invalidates previous browser access. Creating a new code revokes the previous code; keep it private, since possession grants access to that visit.
+The **Changing phones?** panel on My orders, which calls recovery codes "backup codes", can start a fresh visit on a shared browser. This revokes the previous cookie and hides its cart and orders. An optional private recovery code can restore an earlier visit without merging it into the current one. Codes are generated from 32 random bytes, stored only as hashes, expire after 180 days, and are consumed when used. Recovery rotates the cookie and CSRF token and invalidates previous browser access. Creating a new code revokes the previous code; keep it private, since possession grants access to that visit.
 
 Guest API endpoints:
 

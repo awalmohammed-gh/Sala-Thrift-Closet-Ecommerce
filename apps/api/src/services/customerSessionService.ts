@@ -93,7 +93,7 @@ export async function recoverCustomerSession(token: string, current: CustomerSes
     } },
     { returnDocument: "after", session: transaction },
   ).lean<CustomerSessionDoc>();
-    if (!restored) throw new ApiError(400, "RECOVERY_INVALID", "This recovery code is invalid, expired or already used.");
+    if (!restored) throw new ApiError(400, "RECOVERY_INVALID", "This backup code didn't work. It may be wrong, expired or already used.");
     if (!restored._id.equals(current._id)) await revokeCustomerSession(current, transaction);
     return restored;
   });

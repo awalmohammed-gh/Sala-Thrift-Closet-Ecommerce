@@ -176,7 +176,7 @@ export function CartView({ whatsappEnabled, whatsappNotice, deliveryFee }: { wha
                 <Link href="/shop" className="inline-flex min-h-9 items-center gap-2 text-sm font-semibold text-brand hover:underline">
                   <FiArrowLeft className="size-4" aria-hidden="true" /> Continue Shopping
                 </Link>
-                <Link href="/my-orders" className="text-xs text-muted hover:text-brand">My orders &amp; guest privacy</Link>
+                <Link href="/my-orders" className="text-xs text-muted hover:text-brand">My orders</Link>
               </div>
             </section>
 

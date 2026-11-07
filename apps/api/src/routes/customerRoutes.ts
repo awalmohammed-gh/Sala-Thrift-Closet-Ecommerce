@@ -29,7 +29,7 @@ customerRouter.post("/recovery-token", requireCustomer, requireCustomerCsrf, asy
   sendSuccess(res, await issueRecoveryToken(req.customerSession!));
 }));
 customerRouter.post("/recover", orderLimiter, requireCustomer, requireCustomerCsrf,
-  validateBody(z.object({ token: z.string().trim().regex(/^[A-Za-z0-9_-]{43}$/, "Enter a valid recovery code") })),
+  validateBody(z.object({ token: z.string().trim().regex(/^[A-Za-z0-9_-]{43}$/, "Enter a valid backup code") })),
   asyncHandler(async (req, res) => {
     const session = await recoverCustomerSession(req.body.token as string, req.customerSession!, res);
     sendSuccess(res, { csrfToken: guestCsrf(session), expiresAt: session.expiresAt.toISOString() });
